@@ -1,0 +1,160 @@
+/* TGS Email Report — Admin CSS */
+
+.tgs-email-dashboard .tgs-email-card {
+    transition: box-shadow 0.2s ease;
+}
+.tgs-email-dashboard .tgs-email-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+
+/* Loading state */
+.tgs-email-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+}
+.tgs-email-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
+    border: 3px solid #dee2e6;
+    border-top-color: #2d5f8a;
+    border-radius: 50%;
+    animation: tgs-spin 0.6s linear infinite;
+}
+@keyframes tgs-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Toast notification */
+.tgs-email-toast {
+    position: fixed;
+    top: 40px;
+    right: 20px;
+    z-index: 100001;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    animation: tgs-slide-in 0.3s ease;
+    max-width: 400px;
+}
+.tgs-email-toast.success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+.tgs-email-toast.error   { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+.tgs-email-toast.info    { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+
+@keyframes tgs-slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+}
+
+/* Recipients table */
+.tgs-rcpt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.tgs-rcpt-table th {
+    background: #f0f4f8;
+    color: #1e3a5f;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+.tgs-rcpt-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+.tgs-rcpt-table tr:hover td {
+    background: #f8fafc;
+}
+
+/* Log table */
+.tgs-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.tgs-log-table th {
+    background: #f0f4f8;
+    color: #1e3a5f;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+.tgs-log-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.tgs-log-table tr:hover td {
+    background: #f8fafc;
+}
+
+/* Badge */
+.tgs-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.tgs-badge-success { background: #d4edda; color: #155724; }
+.tgs-badge-danger  { background: #f8d7da; color: #721c24; }
+.tgs-badge-warning { background: #fff3cd; color: #856404; }
+.tgs-badge-info    { background: #d1ecf1; color: #0c5460; }
+
+/* Pagination */
+.tgs-pagination-btn {
+    padding: 4px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+}
+.tgs-pagination-btn.active {
+    background: #2d5f8a;
+    color: #fff;
+    border-color: #2d5f8a;
+}
+.tgs-pagination-btn:hover {
+    background: #f0f4f8;
+}
+.tgs-pagination-btn.active:hover {
+    background: #1e3a5f;
+}
+
+/* Button loading */
+button.tgs-btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+button.tgs-btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: tgs-spin 0.5s linear infinite;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    .tgs-email-dashboard h2 { font-size: 18px !important; }
+    .tgs-email-card { padding: 14px 16px !important; }
+    .tgs-rcpt-table, .tgs-log-table { font-size: 12px; }
+}
