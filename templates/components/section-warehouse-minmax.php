@@ -13,24 +13,36 @@ $sm = $minmax['summary'] ?? [];
     </div>
 
     <!-- Summary -->
-    <div class="stats-row" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-        <div class="stat-card danger" style="flex:1; min-width:140px; background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #dc3545;">
-            <div class="label" style="font-size:11px; color:#6c757d;">Dưới MIN</div>
-            <div class="value" style="font-size:20px; font-weight:700; color:#dc3545;"><?php echo $sm['total_below_min'] ?? 0; ?></div>
-        </div>
-        <div class="stat-card warning" style="flex:1; min-width:140px; background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #ffc107;">
-            <div class="label" style="font-size:11px; color:#6c757d;">Vượt MAX</div>
-            <div class="value" style="font-size:20px; font-weight:700; color:#856404;"><?php echo $sm['total_above_max'] ?? 0; ?></div>
-        </div>
-        <div class="stat-card" style="flex:1; min-width:140px; background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #ffc107;">
-            <div class="label" style="font-size:11px; color:#6c757d;">Sắp Hết Hạn</div>
-            <div class="value" style="font-size:20px; font-weight:700; color:#856404;"><?php echo $sm['total_near_expiry'] ?? 0; ?></div>
-        </div>
-        <div class="stat-card info" style="flex:1; min-width:140px; background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #17a2b8;">
-            <div class="label" style="font-size:11px; color:#6c757d;">Đề Xuất Mua</div>
-            <div class="value" style="font-size:20px; font-weight:700; color:#0c5460;"><?php echo $sm['total_reorder'] ?? 0; ?></div>
-        </div>
-    </div>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:16px;">
+        <tr>
+            <td width="50%" style="padding:0 6px 12px 0; vertical-align:top;">
+                <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #dc3545;">
+                    <div style="font-size:11px; color:#6c757d;">Dưới MIN</div>
+                    <div style="font-size:20px; font-weight:700; color:#dc3545;"><?php echo $sm['total_below_min'] ?? 0; ?></div>
+                </div>
+            </td>
+            <td width="50%" style="padding:0 0 12px 6px; vertical-align:top;">
+                <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #ffc107;">
+                    <div style="font-size:11px; color:#6c757d;">Vượt MAX</div>
+                    <div style="font-size:20px; font-weight:700; color:#856404;"><?php echo $sm['total_above_max'] ?? 0; ?></div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td width="50%" style="padding:0 6px 0 0; vertical-align:top;">
+                <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #ffc107;">
+                    <div style="font-size:11px; color:#6c757d;">Sắp Hết Hạn</div>
+                    <div style="font-size:20px; font-weight:700; color:#856404;"><?php echo $sm['total_near_expiry'] ?? 0; ?></div>
+                </div>
+            </td>
+            <td width="50%" style="padding:0 0 0 6px; vertical-align:top;">
+                <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #17a2b8;">
+                    <div style="font-size:11px; color:#6c757d;">Đề Xuất Mua</div>
+                    <div style="font-size:20px; font-weight:700; color:#0c5460;"><?php echo $sm['total_reorder'] ?? 0; ?></div>
+                </div>
+            </td>
+        </tr>
+    </table>
 
     <!-- Dưới MIN -->
     <?php if (!empty($minmax['below_min'])): ?>

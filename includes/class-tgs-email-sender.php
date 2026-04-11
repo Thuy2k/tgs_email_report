@@ -142,9 +142,22 @@ class TGS_Email_Sender
         );
 
         // Cập nhật status
+        $error_msg = null;
+        if (!$sent) {
+            // Lấy lỗi chi tiết từ Resend API hoặc PHPMailer
+            if (!empty($GLOBALS['tgs_resend_last_error'])) {
+                $error_msg = $GLOBALS['tgs_resend_last_error'];
+            } else {
+                global $phpmailer;
+                $error_msg = (isset($phpmailer) && is_object($phpmailer) && !empty($phpmailer->ErrorInfo))
+                    ? $phpmailer->ErrorInfo
+                    : 'wp_mail returned false';
+            }
+        }
+
         $wpdb->update(TGS_EMAIL_TABLE_LOG, [
             'send_status'   => $sent ? 1 : 2, // 1 = success, 2 = failed
-            'error_message' => $sent ? null : 'wp_mail returned false',
+            'error_message' => $error_msg,
             'updated_at'    => current_time('mysql'),
         ], ['log_id' => $log_id]);
 
@@ -153,7 +166,7 @@ class TGS_Email_Sender
             'log_id'  => $log_id,
             'message' => $sent
                 ? 'Email đã gửi thành công!'
-                : 'Gửi email thất bại. Kiểm tra cấu hình SMTP.',
+                : 'Gửi email thất bại. ' . ($error_msg ? 'Lỗi: ' . $error_msg : 'Kiểm tra cấu hình email.'),
         ];
     }
 

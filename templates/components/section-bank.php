@@ -22,20 +22,28 @@ $total_diff = $total_collected - $total_expected;
     <?php else: ?>
 
         <!-- Tổng quan đối chiếu -->
-        <div class="stats-row" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-            <div class="stat-card" style="flex:1; min-width:140px; background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #2d5f8a;">
-                <div class="label" style="font-size:11px; color:#6c757d; text-transform:uppercase;">Cần Thu</div>
-                <div class="value" style="font-size:20px; font-weight:700; color:#1e3a5f;"><?php echo $fmt($total_expected); ?>đ</div>
-            </div>
-            <div class="stat-card <?php echo $total_diff >= 0 ? 'success' : 'danger'; ?>" style="flex:1; min-width:140px; background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid <?php echo $total_diff >= 0 ? '#28a745' : '#dc3545'; ?>;">
-                <div class="label" style="font-size:11px; color:#6c757d; text-transform:uppercase;">Thực Thu</div>
-                <div class="value" style="font-size:20px; font-weight:700; color:<?php echo $total_diff >= 0 ? '#28a745' : '#dc3545'; ?>;"><?php echo $fmt($total_collected); ?>đ</div>
-            </div>
-            <div class="stat-card <?php echo abs($total_diff) <= 1000 ? 'success' : ($total_diff > 0 ? 'warning' : 'danger'); ?>" style="flex:1; min-width:140px; background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid <?php echo abs($total_diff) <= 1000 ? '#28a745' : ($total_diff > 0 ? '#ffc107' : '#dc3545'); ?>;">
-                <div class="label" style="font-size:11px; color:#6c757d; text-transform:uppercase;">Chênh Lệch</div>
-                <div class="value" style="font-size:20px; font-weight:700; color:<?php echo abs($total_diff) <= 1000 ? '#28a745' : '#dc3545'; ?>;"><?php echo ($total_diff > 0 ? '+' : '') . $fmt($total_diff); ?>đ</div>
-            </div>
-        </div>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:16px;">
+            <tr>
+                <td width="33%" style="padding:0 6px 0 0; vertical-align:top;">
+                    <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #2d5f8a;">
+                        <div style="font-size:11px; color:#6c757d; text-transform:uppercase;">Cần Thu</div>
+                        <div style="font-size:18px; font-weight:700; color:#1e3a5f;"><?php echo $fmt($total_expected); ?>đ</div>
+                    </div>
+                </td>
+                <td width="33%" style="padding:0 3px; vertical-align:top;">
+                    <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid <?php echo $total_diff >= 0 ? '#28a745' : '#dc3545'; ?>;">
+                        <div style="font-size:11px; color:#6c757d; text-transform:uppercase;">Thực Thu</div>
+                        <div style="font-size:18px; font-weight:700; color:<?php echo $total_diff >= 0 ? '#28a745' : '#dc3545'; ?>;"><?php echo $fmt($total_collected); ?>đ</div>
+                    </div>
+                </td>
+                <td width="33%" style="padding:0 0 0 6px; vertical-align:top;">
+                    <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid <?php echo abs($total_diff) <= 1000 ? '#28a745' : ($total_diff > 0 ? '#ffc107' : '#dc3545'); ?>;">
+                        <div style="font-size:11px; color:#6c757d; text-transform:uppercase;">Chênh Lệch</div>
+                        <div style="font-size:18px; font-weight:700; color:<?php echo abs($total_diff) <= 1000 ? '#28a745' : '#dc3545'; ?>;"><?php echo ($total_diff > 0 ? '+' : '') . $fmt($total_diff); ?>đ</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
         <div style="overflow-x:auto;">
             <table class="data-table" style="width:100%; border-collapse:collapse; font-size:13px;">

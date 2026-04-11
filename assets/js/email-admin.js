@@ -122,33 +122,52 @@
 
     function renderRecipients(list) {
         if (!list.length) {
-            $('#tgs-recipients-list').html('<p style="color:#888; font-size:13px;">Chưa có người nhận nào. Thêm email để bắt đầu.</p>');
+            $('#tgs-recipients-list').html('<p style="color:#888; font-size:13px;">Chưa có người nhận nào. Thêm email ở trên để bắt đầu nhận báo cáo.</p>');
             return;
         }
 
         var html = '<table class="tgs-rcpt-table">';
-        html += '<tr><th>Email</th><th>Tên</th><th>Vai trò</th><th>Loại</th><th>Active</th><th></th></tr>';
+        html += '<tr><th>Email</th><th>Tên</th><th>Vai trò</th><th style="text-align:center;">🛒 Shop</th><th style="text-align:center;">📦 Kho</th><th style="text-align:center;">Trạng thái</th><th></th></tr>';
 
         list.forEach(function (r) {
             var types = [];
             try { types = JSON.parse(r.email_types); } catch (e) { }
-            var typeBadges = types.map(function (t) {
-                var label = t === 'shop_report' ? 'Shop' : 'Kho';
-                var cls = t === 'shop_report' ? 'tgs-badge-info' : 'tgs-badge-success';
-                return '<span class="tgs-badge ' + cls + '">' + label + '</span>';
-            }).join(' ');
+            var hasShop = types.indexOf('shop_report') >= 0;
+            var hasWh = types.indexOf('warehouse_report') >= 0;
+            var isActive = parseInt(r.is_active);
 
-            var activeBadge = parseInt(r.is_active)
-                ? '<span class="tgs-badge tgs-badge-success">✓</span>'
-                : '<span class="tgs-badge tgs-badge-warning">Off</span>';
+            var shopCell = hasShop
+                ? '<span style="color:#28a745; font-weight:700;">✓</span>'
+                : '<span style="color:#ccc;">—</span>';
+            var whCell = hasWh
+                ? '<span style="color:#28a745; font-weight:700;">✓</span>'
+                : '<span style="color:#ccc;">—</span>';
 
-            html += '<tr>';
-            html += '<td>' + escHtml(r.email) + '</td>';
+            var activeBtn = isActive
+                ? '<button class="btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="0" style="background:#e8f5e9; color:#28a745; border:1px solid #c8e6c9; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer; font-weight:600;">Đang bật</button>'
+                : '<button class="btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="1" style="background:#fff3e0; color:#e65100; border:1px solid #ffe0b2; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer;">Đã tắt</button>';
+
+            var rowStyle = isActive ? '' : ' style="opacity:0.5;"';
+
+            // Encode data for edit
+            var dataAttr = ' data-id="' + r.recipient_id + '"'
+                + ' data-email="' + escHtml(r.email) + '"'
+                + ' data-name="' + escHtml(r.display_name) + '"'
+                + ' data-role="' + escHtml(r.role_label) + '"'
+                + ' data-shop="' + (hasShop ? '1' : '0') + '"'
+                + ' data-wh="' + (hasWh ? '1' : '0') + '"';
+
+            html += '<tr' + rowStyle + '>';
+            html += '<td><strong>' + escHtml(r.email) + '</strong></td>';
             html += '<td>' + escHtml(r.display_name) + '</td>';
             html += '<td>' + escHtml(r.role_label) + '</td>';
-            html += '<td>' + typeBadges + '</td>';
-            html += '<td>' + activeBadge + '</td>';
-            html += '<td><button class="button btn-delete-rcpt" data-id="' + r.recipient_id + '" style="font-size:11px; padding:2px 8px; color:#dc3545;">✕ Xóa</button></td>';
+            html += '<td style="text-align:center;">' + shopCell + '</td>';
+            html += '<td style="text-align:center;">' + whCell + '</td>';
+            html += '<td style="text-align:center;">' + activeBtn + '</td>';
+            html += '<td style="white-space:nowrap;">'
+                + '<button class="button btn-edit-rcpt"' + dataAttr + ' style="font-size:11px; padding:2px 8px; color:#2d5f8a; margin-right:4px;">✎ Sửa</button>'
+                + '<button class="button btn-delete-rcpt" data-id="' + r.recipient_id + '" style="font-size:11px; padding:2px 8px; color:#dc3545;">✕ Xóa</button>'
+                + '</td>';
             html += '</tr>';
         });
 
@@ -156,22 +175,107 @@
         $('#tgs-recipients-list').html(html);
     }
 
+    // Toggle type buttons (Shop / Kho)
+    $(document).on('click', '.rcpt-type-btn', function () {
+        var $btn = $(this);
+        $btn.toggleClass('active');
+        setTypeBtn('#' + $btn.attr('id'), $btn.hasClass('active'));
+    });
+
+    var editingRecipientId = 0; // 0 = add mode, >0 = edit mode
+
     $(document).on('click', '#btn-add-recipient', function () {
+        var types = [];
+        if ($('#rcpt-type-shop').hasClass('active')) types.push('shop_report');
+        if ($('#rcpt-type-wh').hasClass('active')) types.push('warehouse_report');
+
         var data = {
             email: $('#rcpt-email').val(),
             display_name: $('#rcpt-name').val(),
             role_label: $('#rcpt-role').val(),
-            'email_types[]': $('#rcpt-types').val()
+            'email_types[]': types
         };
 
         if (!data.email) {
             showToast('Vui lòng nhập email', 'error');
             return;
         }
+        if (!types.length) {
+            showToast('Chọn ít nhất 1 loại báo cáo (Shop hoặc Kho)', 'error');
+            return;
+        }
+
+        if (editingRecipientId > 0) {
+            data.recipient_id = editingRecipientId;
+        }
 
         ajaxPost('tgs_email_save_recipients', data, function (res) {
-            showToast('Đã thêm người nhận', 'success');
-            $('#rcpt-email, #rcpt-name, #rcpt-role').val('');
+            showToast(editingRecipientId ? 'Đã cập nhật' : 'Đã thêm người nhận', 'success');
+            resetRecipientForm();
+            loadRecipients();
+        });
+    });
+
+    function resetRecipientForm() {
+        editingRecipientId = 0;
+        $('#rcpt-email, #rcpt-name, #rcpt-role').val('');
+        $('#rcpt-email').prop('disabled', false);
+        $('#btn-add-recipient').html('+ Thêm');
+        $('#btn-cancel-edit').remove();
+        // Reset buttons to active
+        setTypeBtn('#rcpt-type-shop', true);
+        setTypeBtn('#rcpt-type-wh', true);
+    }
+
+    function setTypeBtn(sel, active) {
+        var $b = $(sel);
+        if (active) {
+            $b.addClass('active');
+            if ($b.data('value') === 'shop_report') {
+                $b.css({ background: '#e3f0ff', border: '2px solid #2d5f8a', color: '#1e3a5f' });
+            } else {
+                $b.css({ background: '#e8f5e9', border: '2px solid #28a745', color: '#1b5e20' });
+            }
+        } else {
+            $b.removeClass('active');
+            $b.css({ background: '#f5f5f5', border: '2px solid #ccc', color: '#999' });
+        }
+    }
+
+    // Edit recipient — fill form
+    $(document).on('click', '.btn-edit-rcpt', function () {
+        var $btn = $(this);
+        editingRecipientId = $btn.data('id');
+        $('#rcpt-email').val($btn.data('email')).prop('disabled', true);
+        $('#rcpt-name').val($btn.data('name'));
+        $('#rcpt-role').val($btn.data('role'));
+        setTypeBtn('#rcpt-type-shop', $btn.data('shop') == 1);
+        setTypeBtn('#rcpt-type-wh', $btn.data('wh') == 1);
+        $('#btn-add-recipient').html('💾 Lưu');
+        // Add cancel button if not exists
+        if (!$('#btn-cancel-edit').length) {
+            $('<button id="btn-cancel-edit" class="button" style="padding:8px 16px; height:36px; margin-left:6px;">Hủy</button>')
+                .insertAfter('#btn-add-recipient');
+        }
+        // Scroll to form
+        $('html, body').animate({ scrollTop: $('#rcpt-email').offset().top - 100 }, 300);
+    });
+
+    // Cancel edit
+    $(document).on('click', '#btn-cancel-edit', function () {
+        resetRecipientForm();
+    });
+
+    // Toggle active/inactive
+    $(document).on('click', '.btn-toggle-rcpt', function () {
+        var $btn = $(this);
+        var id = $btn.data('id');
+        var newActive = $btn.data('active');
+        ajaxPost('tgs_email_save_recipients', {
+            recipient_id: id,
+            is_active: newActive
+        }, function () {
+            showToast(newActive ? 'Đã bật nhận email' : 'Đã tắt nhận email', 'success');
             loadRecipients();
         });
     });
@@ -347,6 +451,122 @@
             showToast('Đã copy link!', 'success');
         }
     });
+
+    /* ────────────────────────────────────────
+     * SMTP SETTINGS
+     * ──────────────────────────────────────── */
+
+    // Toggle SMTP / Resend config visibility
+    $(document).on('change', 'input[name="email_mode"]', function () {
+        var mode = $(this).val();
+        $('#tgs-smtp-config').toggle(mode === 'smtp');
+        $('#tgs-resend-config').toggle(mode === 'resend_api');
+
+        // Update card styling
+        $('.tgs-mode-card').each(function () {
+            var $card = $(this);
+            var $input = $card.find('input[type="radio"]');
+            var colorMap = { dev: '#28a745', resend_api: '#e91e63' };
+            var bgMap = { dev: '#f0fff4', resend_api: '#fce4ec' };
+            var defaultColor = '#2d5f8a';
+            var defaultBg = '#f0f7ff';
+            if ($input.is(':checked')) {
+                $card.css({ 'border-color': colorMap[mode] || defaultColor, 'background': bgMap[mode] || defaultBg });
+            } else {
+                $card.css({ 'border-color': '#dee2e6', 'background': '#fff' });
+            }
+        });
+    });
+
+    // SMTP Presets
+    $(document).on('click', '.btn-smtp-preset', function () {
+        var $p = $(this);
+        var host = $p.data('host');
+        var port = $p.data('port');
+        var secure = $p.data('secure');
+        var auth = $p.data('auth');
+        var user = $p.data('user');
+        var fromEmail = $p.data('from-email');
+        var fromName = $p.data('from-name');
+        var noVerifySsl = $p.data('no-verify-ssl');
+
+        $('#smtp_host').val(host);
+        $('#smtp_port').val(port);
+        $('#smtp_secure').val(secure !== undefined ? secure : 'tls');
+        if (auth !== undefined) {
+            $('#smtp_auth').val(auth ? '1' : '0');
+        }
+        if (user) {
+            $('#smtp_user').val(user);
+        }
+        if (fromEmail) {
+            $('#from_email').val(fromEmail);
+        }
+        if (fromName) {
+            $('#from_name').val(fromName);
+        }
+        if (noVerifySsl !== undefined) {
+            $('#smtp_no_verify_ssl').prop('checked', !!noVerifySsl);
+        }
+    });
+
+    // Save SMTP settings
+    $(document).on('click', '#btn-save-smtp', function () {
+        var $btn = $(this);
+        var data = {
+            mode: $('input[name="email_mode"]:checked').val() || 'php',
+            smtp_host: $('#smtp_host').val(),
+            smtp_port: $('#smtp_port').val(),
+            smtp_secure: $('#smtp_secure').val(),
+            smtp_auth: $('#smtp_auth').val(),
+            smtp_user: $('#smtp_user').val(),
+            smtp_pass: $('#smtp_pass').val(),
+            smtp_no_verify_ssl: $('#smtp_no_verify_ssl').is(':checked') ? 1 : 0,
+            resend_api_key: $('#resend_api_key').val(),
+            from_email: $('#from_email').val(),
+            from_name: $('#from_name').val()
+        };
+
+        setLoading($btn, true);
+        ajaxPost('tgs_email_save_settings', data, function (res) {
+            setLoading($btn, false);
+            showToast(res.message || 'Đã lưu!', 'success');
+            showSmtpResult('<div style="padding:8px 12px; background:#d4edda; color:#155724; border-radius:4px; font-size:13px;">✓ ' + (res.message || 'OK') + '</div>');
+        }, function (msg) {
+            setLoading($btn, false);
+            showToast(msg, 'error');
+        });
+    });
+
+    // Test SMTP
+    $(document).on('click', '#btn-test-smtp', function () {
+        var $btn = $(this);
+        var email = $('#test_email_to').val();
+        if (!email) {
+            showToast('Nhập email để test', 'error');
+            return;
+        }
+
+        setLoading($btn, true);
+        ajaxPost('tgs_email_test_smtp', { test_email: email }, function (res) {
+            setLoading($btn, false);
+            showToast(res.message, 'success');
+            showSmtpResult('<div style="padding:8px 12px; background:#d4edda; color:#155724; border-radius:4px; font-size:13px;">✓ ' + escHtml(res.message) + '</div>');
+            $('#tgs-cpanel-warning').hide();
+        }, function (msg) {
+            setLoading($btn, false);
+            showToast(msg, 'error');
+            showSmtpResult('<div style="padding:8px 12px; background:#f8d7da; color:#721c24; border-radius:4px; font-size:13px;">✗ ' + escHtml(msg) + '</div>');
+            // Show cPanel warning if certificate mismatch error
+            if (msg && (msg.indexOf('certificate') !== -1 || msg.indexOf('CN=') !== -1 || msg.indexOf('cprapid') !== -1 || msg.indexOf('Peer certificate') !== -1)) {
+                $('#tgs-cpanel-warning').slideDown(200);
+            }
+        });
+    });
+
+    function showSmtpResult(html) {
+        $('#tgs-smtp-result').html(html).show();
+    }
 
     /* ────────────────────────────────────────
      * UTILS

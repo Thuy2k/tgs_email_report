@@ -31,6 +31,9 @@ class TGS_Email_Ajax
             'tgs_email_get_recipients',
             'tgs_email_delete_recipient',
             'tgs_email_preview',
+            'tgs_email_save_settings',
+            'tgs_email_get_settings',
+            'tgs_email_test_smtp',
         ];
 
         foreach ($actions as $action) {
@@ -222,12 +225,22 @@ class TGS_Email_Ajax
         self::check();
         global $wpdb;
 
+        $recipient_id = (int) ($_POST['recipient_id'] ?? 0);
+        $table = TGS_EMAIL_TABLE_RECIPIENTS;
+        $now = current_time('mysql');
+
+        // Toggle active/inactive only (partial update)
+        if ($recipient_id > 0 && isset($_POST['is_active']) && !isset($_POST['email'])) {
+            $is_active = (int) $_POST['is_active'];
+            $wpdb->update($table, ['is_active' => $is_active, 'updated_at' => $now], ['recipient_id' => $recipient_id]);
+            wp_send_json_success(['recipient_id' => $recipient_id, 'message' => 'Đã cập nhật']);
+        }
+
         $email       = sanitize_email($_POST['email'] ?? '');
         $name        = sanitize_text_field($_POST['display_name'] ?? '');
         $role        = sanitize_text_field($_POST['role_label'] ?? '');
         $types_raw   = $_POST['email_types'] ?? [];
         $is_active   = (int) ($_POST['is_active'] ?? 1);
-        $recipient_id = (int) ($_POST['recipient_id'] ?? 0);
 
         if (!is_email($email)) {
             wp_send_json_error(['message' => 'Email không hợp lệ']);
@@ -281,5 +294,46 @@ class TGS_Email_Ajax
             $wpdb->delete(TGS_EMAIL_TABLE_RECIPIENTS, ['recipient_id' => $rid]);
         }
         wp_send_json_success(['message' => 'Đã xóa']);
+    }
+
+    /* ════════════════════════════════════════════
+     *  SMTP SETTINGS
+     * ════════════════════════════════════════════ */
+    public static function handle_save_settings()
+    {
+        self::check();
+        $data = [
+            'mode'              => sanitize_text_field($_POST['mode'] ?? 'php'),
+            'smtp_host'         => sanitize_text_field($_POST['smtp_host'] ?? ''),
+            'smtp_port'         => (int) ($_POST['smtp_port'] ?? 587),
+            'smtp_secure'       => sanitize_text_field($_POST['smtp_secure'] ?? 'tls'),
+            'smtp_auth'         => (int) ($_POST['smtp_auth'] ?? 1),
+            'smtp_user'         => sanitize_text_field($_POST['smtp_user'] ?? ''),
+            'smtp_pass'         => $_POST['smtp_pass'] ?? '',
+            'smtp_no_verify_ssl' => (int) ($_POST['smtp_no_verify_ssl'] ?? 0),
+            'resend_api_key'    => $_POST['resend_api_key'] ?? '',
+            'from_email'        => sanitize_email($_POST['from_email'] ?? ''),
+            'from_name'         => sanitize_text_field($_POST['from_name'] ?? 'TGS System'),
+        ];
+        TGS_Email_Settings::save($data);
+        wp_send_json_success(['message' => 'Đã lưu cài đặt!', 'settings' => TGS_Email_Settings::get_for_display()]);
+    }
+
+    public static function handle_get_settings()
+    {
+        self::check();
+        wp_send_json_success(['settings' => TGS_Email_Settings::get_for_display()]);
+    }
+
+    public static function handle_test_smtp()
+    {
+        self::check();
+        $to = sanitize_email($_POST['test_email'] ?? '');
+        $result = TGS_Email_Settings::send_test($to);
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error($result);
+        }
     }
 }

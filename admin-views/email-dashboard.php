@@ -28,6 +28,10 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
             <h2 style="margin:0; font-size:22px; color:#1e3a5f;">📧 Email Báo Cáo Tự Động</h2>
             <p style="margin:4px 0 0; color:#6c757d; font-size:13px;">Gửi báo cáo bán hàng, thu ngân hàng, MIN/MAX tồn kho cho leaders & sếp.</p>
         </div>
+        <a href="<?php echo admin_url('admin.php?page=tgs-shop-management&view=email-report-settings'); ?>"
+           class="button" style="background:#f0f4f8; border-color:#dee2e6; color:#1e3a5f;">
+            ⚙️ Cài Đặt SMTP
+        </a>
         <a href="<?php echo admin_url('admin.php?page=tgs-shop-management&view=email-report-log'); ?>"
            class="button" style="background:#f0f4f8; border-color:#dee2e6; color:#1e3a5f;">
             📋 Lịch Sử Gửi
@@ -126,32 +130,38 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
         <h3 style="margin:0 0 16px; font-size:16px; color:#1e3a5f; border-bottom:1px solid #eee; padding-bottom:8px;">👥 Danh Sách Người Nhận</h3>
 
         <!-- Form thêm -->
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:flex-end;">
-            <div>
-                <label style="display:block; font-size:11px; color:#6c757d; margin-bottom:2px;">Email *</label>
-                <input type="email" id="rcpt-email" placeholder="email@domain.com"
-                       style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; width:220px;">
+        <div style="background:#f8fafc; border-radius:8px; padding:16px; margin-bottom:16px; border:1px dashed #dee2e6;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+                <div style="flex:1; min-width:200px;">
+                    <label style="display:block; font-size:11px; color:#6c757d; margin-bottom:2px; font-weight:600;">Email *</label>
+                    <input type="email" id="rcpt-email" placeholder="email@domain.com"
+                           style="padding:8px 10px; border:1px solid #ccc; border-radius:4px; width:100%; box-sizing:border-box;">
+                </div>
+                <div style="min-width:140px;">
+                    <label style="display:block; font-size:11px; color:#6c757d; margin-bottom:2px; font-weight:600;">Tên hiển thị</label>
+                    <input type="text" id="rcpt-name" placeholder="Nguyễn Văn A"
+                           style="padding:8px 10px; border:1px solid #ccc; border-radius:4px; width:100%; box-sizing:border-box;">
+                </div>
+                <div style="min-width:110px;">
+                    <label style="display:block; font-size:11px; color:#6c757d; margin-bottom:2px; font-weight:600;">Vai trò</label>
+                    <input type="text" id="rcpt-role" placeholder="Leader KD"
+                           style="padding:8px 10px; border:1px solid #ccc; border-radius:4px; width:100%; box-sizing:border-box;">
+                </div>
+                <div style="min-width:180px;">
+                    <label style="display:block; font-size:11px; color:#6c757d; margin-bottom:4px; font-weight:600;">Nhận báo cáo</label>
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" id="rcpt-type-shop" class="rcpt-type-btn active"
+                                style="padding:6px 14px; border-radius:4px; font-size:13px; cursor:pointer; border:2px solid #2d5f8a; background:#e3f0ff; color:#1e3a5f; font-weight:600;"
+                                data-value="shop_report">🛒 Shop</button>
+                        <button type="button" id="rcpt-type-wh" class="rcpt-type-btn active"
+                                style="padding:6px 14px; border-radius:4px; font-size:13px; cursor:pointer; border:2px solid #28a745; background:#e8f5e9; color:#1b5e20; font-weight:600;"
+                                data-value="warehouse_report">📦 Kho</button>
+                    </div>
+                </div>
+                <button id="btn-add-recipient" class="button button-primary" style="padding:8px 20px; height:36px; font-weight:600;">
+                    + Thêm
+                </button>
             </div>
-            <div>
-                <label style="display:block; font-size:11px; color:#6c757d; margin-bottom:2px;">Tên hiển thị</label>
-                <input type="text" id="rcpt-name" placeholder="Nguyễn Văn A"
-                       style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; width:160px;">
-            </div>
-            <div>
-                <label style="display:block; font-size:11px; color:#6c757d; margin-bottom:2px;">Vai trò</label>
-                <input type="text" id="rcpt-role" placeholder="Leader KD"
-                       style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; width:120px;">
-            </div>
-            <div>
-                <label style="display:block; font-size:11px; color:#6c757d; margin-bottom:2px;">Nhận email</label>
-                <select id="rcpt-types" multiple style="padding:4px; border:1px solid #ccc; border-radius:4px; height:32px;">
-                    <option value="shop_report" selected>Shop</option>
-                    <option value="warehouse_report" selected>Kho</option>
-                </select>
-            </div>
-            <button id="btn-add-recipient" class="button button-primary" style="padding:6px 16px; height:34px;">
-                + Thêm
-            </button>
         </div>
 
         <!-- Table -->

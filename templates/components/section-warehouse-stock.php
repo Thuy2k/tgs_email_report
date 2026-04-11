@@ -26,10 +26,10 @@ $shops = $stock['by_shop'] ?? [];
                         <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Tồn Đầu</th>
                         <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Nhập</th>
                         <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Xuất</th>
-                        <th class="hide-mobile" style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Hư</th>
-                        <th class="hide-mobile" style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">CK</th>
+                        <th class="hide-mobile" style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Hỏng</th>
+                        <th class="hide-mobile" style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">C.Kho</th>
                         <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Tồn Cuối</th>
-                        <th class="hide-mobile" style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Stockout</th>
+                        <th class="hide-mobile" style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Hết Hàng</th>
                     </tr>
                 </thead>
                 <tbody>

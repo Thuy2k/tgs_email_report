@@ -77,9 +77,6 @@ if (!defined('ABSPATH')) exit;
             .email-wrapper { width: 100% !important; }
             .email-header, .email-body, .email-footer { padding: 16px !important; }
             .email-header h1 { font-size: 18px !important; }
-            .stats-row { flex-direction: column; }
-            .stat-card { min-width: 100% !important; }
-            .stat-card .value { font-size: 16px !important; }
             .data-table { font-size: 11px !important; }
             .data-table th, .data-table td { padding: 6px 4px !important; }
             .section-title { font-size: 14px !important; }
