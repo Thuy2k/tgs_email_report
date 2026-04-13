@@ -83,4 +83,45 @@ abstract class TGS_Collector_Base
         $day_of_week = date('N', $d); // 1=Mon, 7=Sun
         return date('Y-m-d', strtotime('-' . ($day_of_week - 1) . ' days', $d));
     }
+
+    /* ── Helper: bảng config MIN/MAX (dùng base_prefix, không hardcode) ── */
+    protected static function config_table()
+    {
+        global $wpdb;
+        return $wpdb->base_prefix . 'global_lot_item_shop_config';
+    }
+
+    /* ── Helper: bảng reorder suggestion ── */
+    protected static function reorder_table()
+    {
+        global $wpdb;
+        return $wpdb->base_prefix . 'global_reorder_suggestion';
+    }
+
+    /**
+     * Tạo INNER JOIN subquery lấy bản ghi inventory mới nhất (as-of $date_to)
+     * cho mỗi (blog_id, sku, exp_date).
+     *
+     * Cùng logic với DashboardQueryService::inventory_latest_join() trong rollup analytics.
+     * Alias bảng fact phải là "inv", subquery alias là "latest".
+     *
+     * @param string $inv_table  Tên bảng fact_inventory_daily (đã escape)
+     * @param string $date_to    Y-m-d — ngày snapshot
+     * @return string  SQL INNER JOIN clause (chưa prepare, date_to được nhúng trực tiếp)
+     */
+    protected static function inventory_latest_join($inv_table, $date_to)
+    {
+        global $wpdb;
+        $safe_date = esc_sql($date_to);
+        return "INNER JOIN (
+                SELECT blog_id, sku, exp_date, MAX(rollup_date) AS latest_date
+                FROM {$inv_table}
+                WHERE rollup_date <= '{$safe_date}'
+                GROUP BY blog_id, sku, exp_date
+            ) latest
+                ON latest.blog_id = inv.blog_id
+                AND latest.sku = inv.sku
+                AND latest.exp_date <=> inv.exp_date
+                AND latest.latest_date = inv.rollup_date";
+    }
 }

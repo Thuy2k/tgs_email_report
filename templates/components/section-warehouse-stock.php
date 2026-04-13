@@ -25,7 +25,7 @@ $shops = $stock['by_shop'] ?? [];
                         <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">SKU</th>
                         <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Tồn Đầu</th>
                         <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Nhập</th>
-                        <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Xuất</th>
+                        <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Bán</th>
                         <th class="hide-mobile" style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Hỏng</th>
                         <th class="hide-mobile" style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">C.Kho</th>
                         <th style="background:#f0f4f8; padding:8px; text-align:right; border-bottom:2px solid #dee2e6;">Tồn Cuối</th>
@@ -39,7 +39,7 @@ $shops = $stock['by_shop'] ?? [];
                         <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right;"><?php echo $s['total_skus']; ?></td>
                         <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right;"><?php echo $fmt($s['opening_qty']); ?></td>
                         <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#28a745;">+<?php echo $fmt($s['in_qty']); ?></td>
-                        <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#dc3545;">-<?php echo $fmt($s['out_qty']); ?></td>
+                        <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#dc3545;"><?php echo $fmt($s['out_qty']); ?></td>
                         <td class="hide-mobile" style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#856404;"><?php echo $fmt($s['damage_qty']); ?></td>
                         <td class="hide-mobile" style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right;"><?php echo $fmt($s['transfer_out_qty']); ?></td>
                         <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; font-weight:700;"><?php echo $fmt($s['closing_qty']); ?></td>

@@ -30,8 +30,8 @@ $t = $stock['totals'] ?? [];
         <tr>
             <td width="50%" style="padding:0 6px 0 0; vertical-align:top;">
                 <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #dc3545;">
-                    <div style="font-size:11px; color:#6c757d; text-transform:uppercase;">Xuất</div>
-                    <div style="font-size:20px; font-weight:700; color:#dc3545;">-<?php echo $fmt($t['out_qty'] ?? 0); ?></div>
+                    <div style="font-size:11px; color:#6c757d; text-transform:uppercase;">Bán</div>
+                    <div style="font-size:20px; font-weight:700; color:#dc3545;"><?php echo $fmt($t['out_qty'] ?? 0); ?></div>
                 </div>
             </td>
             <td width="50%" style="padding:0 0 0 6px; vertical-align:top;">
