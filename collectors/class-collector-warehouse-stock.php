@@ -22,13 +22,21 @@ class TGS_Collector_Warehouse_Stock extends TGS_Collector_Base
             'by_shop' => [],
             'totals'  => [
                 'opening_qty'      => 0,
+                'opening_value'    => 0,
                 'in_qty'           => 0,
+                'in_value'         => 0,
                 'out_qty'          => 0,
+                'out_value'        => 0,
                 'damage_qty'       => 0,
+                'damage_value'     => 0,
                 'transfer_out_qty' => 0,
+                'transfer_out_value' => 0,
                 'closing_qty'      => 0,
+                'closing_value'    => 0,
+                'cogs_value'       => 0,
                 'stockout_count'   => 0,
                 'slow_moving_count' => 0,
+                'total_skus'       => 0,
             ],
         ];
 
@@ -92,14 +100,22 @@ class TGS_Collector_Warehouse_Stock extends TGS_Collector_Base
             ];
 
             // Cộng dồn totals
-            $result['totals']['opening_qty']     += (float) $r->opening_qty;
-            $result['totals']['in_qty']          += (float) $r->in_qty;
-            $result['totals']['out_qty']         += (float) $r->out_qty;
-            $result['totals']['damage_qty']      += (float) $r->damage_qty;
-            $result['totals']['transfer_out_qty'] += (float) $r->transfer_out_qty;
-            $result['totals']['closing_qty']     += (float) $r->closing_qty;
-            $result['totals']['stockout_count']  += (int) $r->stockout_count;
-            $result['totals']['slow_moving_count'] += (int) $r->slow_moving_count;
+            $result['totals']['opening_qty']      += (float) $r->opening_qty;
+            $result['totals']['opening_value']     += (float) $r->opening_value;
+            $result['totals']['in_qty']            += (float) $r->in_qty;
+            $result['totals']['in_value']           += (float) $r->in_value;
+            $result['totals']['out_qty']            += (float) $r->out_qty;
+            $result['totals']['out_value']          += (float) $r->out_value;
+            $result['totals']['damage_qty']         += (float) $r->damage_qty;
+            $result['totals']['damage_value']       += (float) $r->damage_value;
+            $result['totals']['transfer_out_qty']   += (float) $r->transfer_out_qty;
+            $result['totals']['transfer_out_value'] += (float) $r->transfer_out_value;
+            $result['totals']['closing_qty']        += (float) $r->closing_qty;
+            $result['totals']['closing_value']      += (float) $r->closing_value;
+            $result['totals']['cogs_value']         += (float) $r->cogs_value;
+            $result['totals']['stockout_count']     += (int) $r->stockout_count;
+            $result['totals']['slow_moving_count']  += (int) $r->slow_moving_count;
+            $result['totals']['total_skus']         += (int) $r->total_skus;
         }
 
         return $result;

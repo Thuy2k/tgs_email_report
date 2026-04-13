@@ -52,7 +52,7 @@ $sm = $minmax['summary'] ?? [];
             <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;">
                 <tr>
                     <th style="background:#f8d7da; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Shop</th>
-                    <th style="background:#f8d7da; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">SKU</th>
+                    <th style="background:#f8d7da; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Sản phẩm</th>
                     <th style="background:#f8d7da; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">Tồn</th>
                     <th style="background:#f8d7da; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">MIN</th>
                     <th style="background:#f8d7da; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">Thiếu</th>
@@ -60,7 +60,7 @@ $sm = $minmax['summary'] ?? [];
                 <?php foreach (array_slice($minmax['below_min'], 0, 20) as $item): ?>
                 <tr>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><?php echo esc_html($item['shop_name']); ?></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; font-weight:600;"><?php echo esc_html($item['sku']); ?></td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></span><br><span style="font-size:10px; color:#888;"><?php echo esc_html($item['sku']); ?></span></td>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#dc3545; font-weight:600;"><?php echo $fmt($item['closing_qty']); ?></td>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right;"><?php echo $fmt($item['min_qty']); ?></td>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#dc3545; font-weight:700;"><?php echo $fmt($item['shortage']); ?></td>
@@ -82,7 +82,7 @@ $sm = $minmax['summary'] ?? [];
             <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;">
                 <tr>
                     <th style="background:#fff3cd; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Shop</th>
-                    <th style="background:#fff3cd; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">SKU</th>
+                    <th style="background:#fff3cd; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Sản phẩm</th>
                     <th style="background:#fff3cd; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">Tồn</th>
                     <th style="background:#fff3cd; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">MAX</th>
                     <th style="background:#fff3cd; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">Dư</th>
@@ -90,7 +90,7 @@ $sm = $minmax['summary'] ?? [];
                 <?php foreach (array_slice($minmax['above_max'], 0, 20) as $item): ?>
                 <tr>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><?php echo esc_html($item['shop_name']); ?></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; font-weight:600;"><?php echo esc_html($item['sku']); ?></td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></span><br><span style="font-size:10px; color:#888;"><?php echo esc_html($item['sku']); ?></span></td>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; font-weight:600;"><?php echo $fmt($item['closing_qty']); ?></td>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right;"><?php echo $fmt($item['max_qty']); ?></td>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#856404; font-weight:700;">+<?php echo $fmt($item['surplus']); ?></td>

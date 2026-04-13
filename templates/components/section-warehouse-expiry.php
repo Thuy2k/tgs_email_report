@@ -17,7 +17,7 @@ $near = $minmax['near_expiry'] ?? [];
         <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12px;">
             <tr>
                 <th style="background:#fff3cd; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Shop</th>
-                <th style="background:#fff3cd; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">SKU</th>
+                <th style="background:#fff3cd; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Sản phẩm</th>
                 <th style="background:#fff3cd; padding:8px; text-align:center; border-bottom:1px solid #dee2e6;">HSD</th>
                 <th style="background:#fff3cd; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">SL Sắp Hết Hạn</th>
                 <th style="background:#fff3cd; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">Tồn Tổng</th>
@@ -25,7 +25,7 @@ $near = $minmax['near_expiry'] ?? [];
             <?php foreach (array_slice($near, 0, 20) as $n): ?>
             <tr>
                 <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><?php echo esc_html($n['shop_name']); ?></td>
-                <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; font-weight:600;"><?php echo esc_html($n['sku']); ?></td>
+                <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;"><?php echo esc_html($n['product_name'] ?? $n['sku']); ?></span><br><span style="font-size:10px; color:#888;"><?php echo esc_html($n['sku']); ?></span></td>
                 <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center; color:#856404;">
                     <?php echo $n['exp_date'] ? date('d/m/Y', strtotime($n['exp_date'])) : '—'; ?>
                 </td>

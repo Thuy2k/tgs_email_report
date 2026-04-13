@@ -35,19 +35,23 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
         $shop_names   = self::get_shop_names();
         $config_table = self::config_table();
         $inv_table    = $wpdb->base_prefix . 'tgs_fact_inventory_daily';
+        $prod_table   = $wpdb->base_prefix . 'tgs_dim_product';
         $reorder_tbl  = self::reorder_table();
 
         $has_config  = ($wpdb->get_var("SHOW TABLES LIKE '{$config_table}'") === $config_table);
         $has_inv     = ($wpdb->get_var("SHOW TABLES LIKE '{$inv_table}'") === $inv_table);
+        $has_prod    = ($wpdb->get_var("SHOW TABLES LIKE '{$prod_table}'") === $prod_table);
         $has_reorder = ($wpdb->get_var("SHOW TABLES LIKE '{$reorder_tbl}'") === $reorder_tbl);
 
         $latest_join = $has_inv ? self::inventory_latest_join($inv_table, $date_to) : '';
+        $prod_join   = $has_prod ? "LEFT JOIN {$prod_table} p ON p.sku = inv.sku" : '';
 
         // ── 1) Dưới MIN ──
         if ($has_config && $has_inv) {
             $below = $wpdb->get_results(
                 "SELECT
                     inv.blog_id, inv.sku,
+                    COALESCE(p.product_name, inv.sku) as product_name,
                     SUM(inv.closing_qty) as closing_qty,
                     cfg.min_qty, cfg.max_qty,
                     (cfg.min_qty - SUM(inv.closing_qty)) as shortage
@@ -55,9 +59,10 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                  {$latest_join}
                  INNER JOIN {$config_table} cfg
                     ON inv.blog_id = cfg.blog_id AND inv.sku = cfg.product_sku
+                 {$prod_join}
                  WHERE cfg.is_active = 1
                    AND cfg.min_qty > 0
-                 GROUP BY inv.blog_id, inv.sku, cfg.min_qty, cfg.max_qty
+                 GROUP BY inv.blog_id, inv.sku, p.product_name, cfg.min_qty, cfg.max_qty
                  HAVING closing_qty < cfg.min_qty
                  ORDER BY shortage DESC
                  LIMIT 300"
@@ -66,12 +71,13 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
             foreach ($below as $r) {
                 $info = $shop_names[$r->blog_id] ?? ['code' => '', 'name' => 'Shop #' . $r->blog_id];
                 $result['below_min'][] = [
-                    'blog_id'     => $r->blog_id,
-                    'shop_name'   => $info['name'],
-                    'sku'         => $r->sku,
-                    'closing_qty' => (float) $r->closing_qty,
-                    'min_qty'     => (float) $r->min_qty,
-                    'shortage'    => (float) $r->shortage,
+                    'blog_id'      => $r->blog_id,
+                    'shop_name'    => $info['name'],
+                    'sku'          => $r->sku,
+                    'product_name' => $r->product_name,
+                    'closing_qty'  => (float) $r->closing_qty,
+                    'min_qty'      => (float) $r->min_qty,
+                    'shortage'     => (float) $r->shortage,
                 ];
             }
             $result['summary']['total_below_min'] = count($below);
@@ -82,6 +88,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
             $above = $wpdb->get_results(
                 "SELECT
                     inv.blog_id, inv.sku,
+                    COALESCE(p.product_name, inv.sku) as product_name,
                     SUM(inv.closing_qty) as closing_qty,
                     cfg.max_qty,
                     (SUM(inv.closing_qty) - cfg.max_qty) as surplus
@@ -89,9 +96,10 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                  {$latest_join}
                  INNER JOIN {$config_table} cfg
                     ON inv.blog_id = cfg.blog_id AND inv.sku = cfg.product_sku
+                 {$prod_join}
                  WHERE cfg.is_active = 1
                    AND cfg.max_qty > 0
-                 GROUP BY inv.blog_id, inv.sku, cfg.max_qty
+                 GROUP BY inv.blog_id, inv.sku, p.product_name, cfg.max_qty
                  HAVING closing_qty > cfg.max_qty
                  ORDER BY surplus DESC
                  LIMIT 200"
@@ -100,12 +108,13 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
             foreach ($above as $r) {
                 $info = $shop_names[$r->blog_id] ?? ['code' => '', 'name' => 'Shop #' . $r->blog_id];
                 $result['above_max'][] = [
-                    'blog_id'     => $r->blog_id,
-                    'shop_name'   => $info['name'],
-                    'sku'         => $r->sku,
-                    'closing_qty' => (float) $r->closing_qty,
-                    'max_qty'     => (float) $r->max_qty,
-                    'surplus'     => (float) $r->surplus,
+                    'blog_id'      => $r->blog_id,
+                    'shop_name'    => $info['name'],
+                    'sku'          => $r->sku,
+                    'product_name' => $r->product_name,
+                    'closing_qty'  => (float) $r->closing_qty,
+                    'max_qty'      => (float) $r->max_qty,
+                    'surplus'      => (float) $r->surplus,
                 ];
             }
             $result['summary']['total_above_max'] = count($above);
@@ -114,10 +123,13 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
         // ── 3) Sắp hết hạn (30 ngày) ──
         if ($has_inv) {
             $near = $wpdb->get_results(
-                "SELECT inv.blog_id, inv.sku, inv.exp_date,
+                "SELECT inv.blog_id, inv.sku,
+                        COALESCE(p.product_name, inv.sku) as product_name,
+                        inv.exp_date,
                         inv.near_expiry_qty, inv.closing_qty
                  FROM {$inv_table} inv
                  {$latest_join}
+                 {$prod_join}
                  WHERE inv.near_expiry_qty > 0
                  ORDER BY inv.near_expiry_qty DESC
                  LIMIT 200"
@@ -129,6 +141,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                     'blog_id'         => $r->blog_id,
                     'shop_name'       => $info['name'],
                     'sku'             => $r->sku,
+                    'product_name'    => $r->product_name,
                     'exp_date'        => $r->exp_date,
                     'near_expiry_qty' => (float) $r->near_expiry_qty,
                     'closing_qty'     => (float) $r->closing_qty,
