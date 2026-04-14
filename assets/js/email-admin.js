@@ -127,7 +127,16 @@
         }
 
         var html = '<table class="tgs-rcpt-table">';
-        html += '<tr><th>Email</th><th>Tên</th><th>Vai trò</th><th style="text-align:center;">🛒 Shop</th><th style="text-align:center;">📦 Kho</th><th style="text-align:center;">Trạng thái</th><th>Gửi riêng</th><th></th></tr>';
+        html += '<tr>'
+            + '<th>Email</th>'
+            + '<th>Tên</th>'
+            + '<th>Vai trò</th>'
+            + '<th style="text-align:center;">Báo cáo Shop</th>'
+            + '<th style="text-align:center;">Báo cáo Kho</th>'
+            + '<th style="text-align:center;">Trạng thái</th>'
+            + '<th style="text-align:center;">Gửi riêng</th>'
+            + '<th></th>'
+            + '</tr>';
 
         list.forEach(function (r) {
             var types = [];
@@ -136,18 +145,14 @@
             var hasWh = types.indexOf('warehouse_report') >= 0;
             var isActive = parseInt(r.is_active);
 
-            var shopCell = hasShop
-                ? '<span style="color:#28a745; font-weight:700;">✓</span>'
-                : '<span style="color:#ccc;">—</span>';
-            var whCell = hasWh
-                ? '<span style="color:#28a745; font-weight:700;">✓</span>'
-                : '<span style="color:#ccc;">—</span>';
+            var shopCell = '<input type="checkbox" disabled ' + (hasShop ? 'checked' : '') + ' style="width:16px; height:16px; accent-color:#2d5f8a;">';
+            var whCell   = '<input type="checkbox" disabled ' + (hasWh ? 'checked' : '') + ' style="width:16px; height:16px; accent-color:#2d5f8a;">';
 
-            var activeBtn = isActive
-                ? '<button class="btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="0" style="background:#e8f5e9; color:#28a745; border:1px solid #c8e6c9; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer; font-weight:600;">Đang bật</button>'
-                : '<button class="btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="1" style="background:#fff3e0; color:#e65100; border:1px solid #ffe0b2; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer;">Đã tắt</button>';
+            var statusHtml = isActive
+                ? '<span class="tgs-er-status tgs-er-status--on btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="0">Đang bật</span>'
+                : '<span class="tgs-er-status tgs-er-status--off btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="1">Đã tắt</span>';
 
-            var rowStyle = isActive ? '' : ' style="opacity:0.5;"';
+            var rowClass = isActive ? '' : ' class="tgs-er-row-disabled"';
 
             // Encode data for edit
             var dataAttr = ' data-id="' + r.recipient_id + '"'
@@ -157,30 +162,30 @@
                 + ' data-shop="' + (hasShop ? '1' : '0') + '"'
                 + ' data-wh="' + (hasWh ? '1' : '0') + '"';
 
-            html += '<tr' + rowStyle + '>';
+            // Per-recipient send buttons
+            var sendBtns = '';
+            if (isActive) {
+                if (hasShop) {
+                    sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="shop_report" title="Gửi báo cáo Shop riêng" style="margin-right:4px;">Shop</button>';
+                }
+                if (hasWh) {
+                    sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="warehouse_report" title="Gửi báo cáo Kho riêng">Kho</button>';
+                }
+            } else {
+                sendBtns = '<span style="color:#ccc;">—</span>';
+            }
+
+            html += '<tr' + rowClass + '>';
             html += '<td><strong>' + escHtml(r.email) + '</strong></td>';
             html += '<td>' + escHtml(r.display_name) + '</td>';
             html += '<td>' + escHtml(r.role_label) + '</td>';
             html += '<td style="text-align:center;">' + shopCell + '</td>';
             html += '<td style="text-align:center;">' + whCell + '</td>';
-            html += '<td style="text-align:center;">' + activeBtn + '</td>';
-            // Per-recipient send buttons
-            var sendBtns = '';
-            if (isActive) {
-                if (hasShop) {
-                    sendBtns += '<button class="button btn-send-individual" data-id="' + r.recipient_id + '" data-type="shop_report" style="font-size:10px; padding:2px 6px; color:#2d5f8a; margin-right:2px;" title="Gửi báo cáo Shop riêng">🛒</button>';
-                }
-                if (hasWh) {
-                    sendBtns += '<button class="button btn-send-individual" data-id="' + r.recipient_id + '" data-type="warehouse_report" style="font-size:10px; padding:2px 6px; color:#17a2b8;" title="Gửi báo cáo Kho riêng">📦</button>';
-                }
-            } else {
-                sendBtns = '<span style="color:#ccc; font-size:11px;">—</span>';
-            }
+            html += '<td style="text-align:center;">' + statusHtml + '</td>';
             html += '<td style="text-align:center; white-space:nowrap;">' + sendBtns + '</td>';
-
             html += '<td style="white-space:nowrap;">'
-                + '<button class="button btn-edit-rcpt"' + dataAttr + ' style="font-size:11px; padding:2px 8px; color:#2d5f8a; margin-right:4px;">✎ Sửa</button>'
-                + '<button class="button btn-delete-rcpt" data-id="' + r.recipient_id + '" style="font-size:11px; padding:2px 8px; color:#dc3545;">✕ Xóa</button>'
+                + '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-edit-rcpt"' + dataAttr + '>Sửa</button> '
+                + '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-danger btn-delete-rcpt" data-id="' + r.recipient_id + '">Xóa</button>'
                 + '</td>';
             html += '</tr>';
         });
@@ -189,19 +194,13 @@
         $('#tgs-recipients-list').html(html);
     }
 
-    // Toggle type buttons (Shop / Kho)
-    $(document).on('click', '.rcpt-type-btn', function () {
-        var $btn = $(this);
-        $btn.toggleClass('active');
-        setTypeBtn('#' + $btn.attr('id'), $btn.hasClass('active'));
-    });
-
+    // Toggle type buttons (Shop / Kho) — now checkboxes
     var editingRecipientId = 0; // 0 = add mode, >0 = edit mode
 
     $(document).on('click', '#btn-add-recipient', function () {
         var types = [];
-        if ($('#rcpt-type-shop').hasClass('active')) types.push('shop_report');
-        if ($('#rcpt-type-wh').hasClass('active')) types.push('warehouse_report');
+        if ($('#rcpt-type-shop').is(':checked')) types.push('shop_report');
+        if ($('#rcpt-type-wh').is(':checked')) types.push('warehouse_report');
 
         var data = {
             email: $('#rcpt-email').val(),
@@ -236,24 +235,8 @@
         $('#rcpt-email').prop('disabled', false);
         $('#btn-add-recipient').html('+ Thêm');
         $('#btn-cancel-edit').remove();
-        // Reset buttons to active
-        setTypeBtn('#rcpt-type-shop', true);
-        setTypeBtn('#rcpt-type-wh', true);
-    }
-
-    function setTypeBtn(sel, active) {
-        var $b = $(sel);
-        if (active) {
-            $b.addClass('active');
-            if ($b.data('value') === 'shop_report') {
-                $b.css({ background: '#e3f0ff', border: '2px solid #2d5f8a', color: '#1e3a5f' });
-            } else {
-                $b.css({ background: '#e8f5e9', border: '2px solid #28a745', color: '#1b5e20' });
-            }
-        } else {
-            $b.removeClass('active');
-            $b.css({ background: '#f5f5f5', border: '2px solid #ccc', color: '#999' });
-        }
+        // Reset checkboxes to checked
+        $('#rcpt-type-shop, #rcpt-type-wh').prop('checked', true);
     }
 
     // Edit recipient — fill form
@@ -263,12 +246,12 @@
         $('#rcpt-email').val($btn.data('email')).prop('disabled', true);
         $('#rcpt-name').val($btn.data('name'));
         $('#rcpt-role').val($btn.data('role'));
-        setTypeBtn('#rcpt-type-shop', $btn.data('shop') == 1);
-        setTypeBtn('#rcpt-type-wh', $btn.data('wh') == 1);
-        $('#btn-add-recipient').html('💾 Lưu');
+        $('#rcpt-type-shop').prop('checked', $btn.data('shop') == 1);
+        $('#rcpt-type-wh').prop('checked', $btn.data('wh') == 1);
+        $('#btn-add-recipient').html('Lưu thay đổi');
         // Add cancel button if not exists
         if (!$('#btn-cancel-edit').length) {
-            $('<button id="btn-cancel-edit" class="button" style="padding:8px 16px; height:36px; margin-left:6px;">Hủy</button>')
+            $('<button id="btn-cancel-edit" class="tgs-er-btn tgs-er-btn-outline" style="height:36px; margin-left:6px;">Hủy</button>')
                 .insertAfter('#btn-add-recipient');
         }
         // Scroll to form
