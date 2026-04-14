@@ -325,37 +325,25 @@
 
         var display = limit ? rows.slice(0, limit) : rows;
 
-        // Map triggered_by to friendly Vietnamese
-        var triggerBadges = {
-            'manual':            '<span class="tgs-badge tgs-badge-secondary">Bấm gửi</span>',
-            'manual_individual': '<span class="tgs-badge tgs-badge-info">Gửi riêng</span>',
-            'url_admin':         '<span class="tgs-badge tgs-badge-secondary">Bấm gửi</span>',
-            'url_cron':          '<span class="tgs-badge tgs-badge-primary">Hẹn giờ</span>',
-            'resend':            '<span class="tgs-badge tgs-badge-warning">Gửi lại</span>'
-        };
-        var defaultTrigger = '<span class="tgs-badge tgs-badge-secondary">Bấm gửi</span>';
-
         var html = '<table class="tgs-log-table">';
         html += '<tr><th>#</th><th>Tiêu đề</th><th>Ngày</th><th>Kết quả</th><th>Nguồn</th><th>Thời gian</th><th></th></tr>';
 
         display.forEach(function (l) {
-            var st = String(l.send_status || '');
-            var statusBadge = '<span class="tgs-badge tgs-badge-warning">Đang gửi</span>';
-            if (st === '1') {
-                statusBadge = '<span class="tgs-badge tgs-badge-success">Thành công</span>';
-            } else if (st === '2') {
-                statusBadge = '<span class="tgs-badge tgs-badge-danger">Lỗi</span>';
-            }
+            var statusText = '<span style="color:#856404;">Đang gửi</span>';
+            if (l.send_status == 1) statusText = '<span style="color:#155724;font-weight:600;">Thành công</span>';
+            else if (l.send_status == 2) statusText = '<span style="color:#721c24;font-weight:600;">Lỗi</span>';
+
+            var triggerNames = {'manual':'Bấm gửi','manual_individual':'Gửi riêng','url_admin':'Bấm gửi','url_cron':'Hẹn giờ','resend':'Gửi lại'};
+            var sourceText = triggerNames[l.triggered_by] || l.triggered_by || '—';
 
             var dateRange = l.date_from === l.date_to ? l.date_from : l.date_from + ' → ' + l.date_to;
-            var triggerBadge = triggerBadges[l.triggered_by] || defaultTrigger;
 
             html += '<tr>';
             html += '<td>#' + l.log_id + '</td>';
             html += '<td style="max-width:350px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escHtml(l.subject) + '</td>';
             html += '<td style="white-space:nowrap;">' + dateRange + '</td>';
-            html += '<td>' + statusBadge + '</td>';
-            html += '<td>' + triggerBadge + '</td>';
+            html += '<td>' + statusText + '</td>';
+            html += '<td>' + escHtml(sourceText) + '</td>';
             html += '<td style="font-size:11px; white-space:nowrap; color:#6c757d;">' + escHtml(l.created_at || '') + '</td>';
             html += '<td style="white-space:nowrap;">';
             html += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-view-log" data-id="' + l.log_id + '">Xem</button> ';
