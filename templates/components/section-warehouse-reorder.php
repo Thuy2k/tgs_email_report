@@ -9,7 +9,7 @@ $reorders = $minmax['reorder_suggestions'] ?? [];
 <?php if (!empty($reorders)): ?>
 <div class="section">
     <div class="section-title" style="font-size:16px; font-weight:700; color:#1e3a5f; margin:0 0 12px 0; padding-bottom:8px; border-bottom:2px solid #17a2b8;">
-        🛒 Đề Xuất Mua Hàng (<?php echo count($reorders); ?>)
+        Đề Xuất Mua Hàng (<?php echo count($reorders); ?>)
     </div>
 
     <div class="alert alert-info" style="padding:12px 16px; border-radius:6px; background:#d1ecf1; color:#0c5460; border-left:4px solid #17a2b8; margin-bottom:12px;">

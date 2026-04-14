@@ -9,7 +9,7 @@ $t = $stock['totals'] ?? [];
 ?>
 <div class="section">
     <div class="section-title" style="font-size:16px; font-weight:700; color:#1e3a5f; margin:0 0 12px 0; padding-bottom:8px; border-bottom:2px solid #2d5f8a;">
-        📦 Tổng Quan Kho Hàng
+        Tổng Quan Kho Hàng
     </div>
 
     <!-- Row 1: Giá trị tồn kho + Tổng SKU -->

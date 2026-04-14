@@ -145,8 +145,12 @@
             var hasWh = types.indexOf('warehouse_report') >= 0;
             var isActive = parseInt(r.is_active);
 
-            var shopCell = '<input type="checkbox" disabled ' + (hasShop ? 'checked' : '') + ' style="width:16px; height:16px; accent-color:#2d5f8a;">';
-            var whCell   = '<input type="checkbox" disabled ' + (hasWh ? 'checked' : '') + ' style="width:16px; height:16px; accent-color:#2d5f8a;">';
+            var shopCell = hasShop
+                ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
+                : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
+            var whCell = hasWh
+                ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
+                : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
 
             var statusHtml = isActive
                 ? '<span class="tgs-er-status tgs-er-status--on btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="0">Đang bật</span>'
@@ -194,13 +198,17 @@
         $('#tgs-recipients-list').html(html);
     }
 
-    // Toggle type buttons (Shop / Kho) — now checkboxes
+    // Toggle type buttons (Shop / Kho)
+    $(document).on('click', '.tgs-er-toggle', function () {
+        $(this).toggleClass('active');
+    });
+
     var editingRecipientId = 0; // 0 = add mode, >0 = edit mode
 
     $(document).on('click', '#btn-add-recipient', function () {
         var types = [];
-        if ($('#rcpt-type-shop').is(':checked')) types.push('shop_report');
-        if ($('#rcpt-type-wh').is(':checked')) types.push('warehouse_report');
+        if ($('#rcpt-type-shop').hasClass('active')) types.push('shop_report');
+        if ($('#rcpt-type-wh').hasClass('active')) types.push('warehouse_report');
 
         var data = {
             email: $('#rcpt-email').val(),
@@ -235,8 +243,8 @@
         $('#rcpt-email').prop('disabled', false);
         $('#btn-add-recipient').html('+ Thêm');
         $('#btn-cancel-edit').remove();
-        // Reset checkboxes to checked
-        $('#rcpt-type-shop, #rcpt-type-wh').prop('checked', true);
+        // Reset toggles to active
+        $('#rcpt-type-shop, #rcpt-type-wh').addClass('active');
     }
 
     // Edit recipient — fill form
@@ -246,8 +254,8 @@
         $('#rcpt-email').val($btn.data('email')).prop('disabled', true);
         $('#rcpt-name').val($btn.data('name'));
         $('#rcpt-role').val($btn.data('role'));
-        $('#rcpt-type-shop').prop('checked', $btn.data('shop') == 1);
-        $('#rcpt-type-wh').prop('checked', $btn.data('wh') == 1);
+        $('#rcpt-type-shop').toggleClass('active', $btn.data('shop') == 1);
+        $('#rcpt-type-wh').toggleClass('active', $btn.data('wh') == 1);
         $('#btn-add-recipient').html('Lưu thay đổi');
         // Add cancel button if not exists
         if (!$('#btn-cancel-edit').length) {
@@ -318,32 +326,28 @@
         var display = limit ? rows.slice(0, limit) : rows;
 
         var html = '<table class="tgs-log-table">';
-        html += '<tr><th>#</th><th>Loại</th><th>Subject</th><th>Ngày</th><th>Trạng thái</th><th>Gửi</th><th></th></tr>';
+        html += '<tr><th>#</th><th>Tiêu đề</th><th>Ngày</th><th>Kết quả</th><th>Nguồn</th><th>Thời gian</th><th></th></tr>';
 
         display.forEach(function (l) {
-            var statusBadge = '';
-            switch (parseInt(l.send_status)) {
-                case 1: statusBadge = '<span class="tgs-badge tgs-badge-success">✓ OK</span>'; break;
-                case 2: statusBadge = '<span class="tgs-badge tgs-badge-danger">✗ Lỗi</span>'; break;
-                default: statusBadge = '<span class="tgs-badge tgs-badge-warning">⏳ Đang</span>';
-            }
+            var statusText = '<span style="color:#856404;">Đang gửi</span>';
+            if (l.send_status == 1) statusText = '<span style="color:#155724;font-weight:600;">Thành công</span>';
+            else if (l.send_status == 2) statusText = '<span style="color:#721c24;font-weight:600;">Lỗi</span>';
 
-            var typeBadge = l.email_type === 'shop_report'
-                ? '<span class="tgs-badge tgs-badge-info">Shop</span>'
-                : '<span class="tgs-badge tgs-badge-success">Kho</span>';
+            var triggerNames = {'manual':'Bấm gửi','manual_individual':'Gửi riêng','url_admin':'Bấm gửi','url_cron':'Hẹn giờ','resend':'Gửi lại'};
+            var sourceText = triggerNames[l.triggered_by] || l.triggered_by || '—';
 
             var dateRange = l.date_from === l.date_to ? l.date_from : l.date_from + ' → ' + l.date_to;
 
             html += '<tr>';
             html += '<td>#' + l.log_id + '</td>';
-            html += '<td>' + typeBadge + '</td>';
-            html += '<td style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escHtml(l.subject) + '</td>';
+            html += '<td style="max-width:350px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escHtml(l.subject) + '</td>';
             html += '<td style="white-space:nowrap;">' + dateRange + '</td>';
-            html += '<td>' + statusBadge + '</td>';
-            html += '<td style="font-size:11px; white-space:nowrap;">' + escHtml(l.triggered_by || 'manual') + '<br>' + escHtml(l.created_at || '') + '</td>';
+            html += '<td>' + statusText + '</td>';
+            html += '<td>' + escHtml(sourceText) + '</td>';
+            html += '<td style="font-size:11px; white-space:nowrap; color:#6c757d;">' + escHtml(l.created_at || '') + '</td>';
             html += '<td style="white-space:nowrap;">';
-            html += '<button class="button btn-view-log" data-id="' + l.log_id + '" style="font-size:11px; padding:2px 8px;">👁️</button> ';
-            html += '<button class="button btn-resend-log" data-id="' + l.log_id + '" style="font-size:11px; padding:2px 8px;">🔄</button>';
+            html += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-view-log" data-id="' + l.log_id + '">Xem</button> ';
+            html += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-resend-log" data-id="' + l.log_id + '">Gửi lại</button>';
             html += '</td>';
             html += '</tr>';
         });

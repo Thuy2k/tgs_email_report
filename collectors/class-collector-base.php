@@ -35,32 +35,78 @@ abstract class TGS_Collector_Base
         return $blogs ?: [];
     }
 
-    /* ── Helper: lấy tên shop từ wp_blogs + blogname (WordPress native) ── */
+    /* ── Helper: lấy tên shop theo tiêu đề site WP + mã shop từ tgs_dim_shop ── */
     protected static function get_shop_names()
     {
         global $wpdb;
+        $dim = $wpdb->base_prefix . 'tgs_dim_shop';
+        $blogs = self::get_active_blog_ids();
+        $dim_map = [];
 
-        $blogs = $wpdb->get_results(
-            "SELECT blog_id, domain, path
-             FROM {$wpdb->blogs}
-             WHERE archived = 0 AND deleted = 0 AND spam = 0
-             ORDER BY blog_id ASC"
-        );
-
-        if (!$blogs) return [];
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$dim}'") !== $dim) {
+            foreach ($blogs as $blog) {
+                $dim_map[$blog->blog_id] = [
+                    'code' => 'SHOP-' . $blog->blog_id,
+                    'name' => '',
+                ];
+            }
+        } else {
+            $rows = $wpdb->get_results("SELECT blog_id, shop_code, shop_name FROM {$dim} WHERE status = 1");
+            foreach ($rows as $r) {
+                $dim_map[$r->blog_id] = [
+                    'code' => $r->shop_code,
+                    'name' => $r->shop_name,
+                ];
+            }
+        }
 
         $map = [];
-        foreach ($blogs as $b) {
-            $prefix = $wpdb->get_blog_prefix($b->blog_id);
-            $name = $wpdb->get_var(
-                "SELECT option_value FROM {$prefix}options WHERE option_name = 'blogname' LIMIT 1"
-            );
-            $map[$b->blog_id] = [
-                'code' => 'SHOP-' . $b->blog_id,
-                'name' => $name ?: $b->domain,
+        foreach ($blogs as $blog) {
+            $blog_id = (int) $blog->blog_id;
+            $site_title = self::get_site_title($blog_id);
+            $dim_info = $dim_map[$blog_id] ?? [
+                'code' => 'SHOP-' . $blog_id,
+                'name' => '',
+            ];
+
+            $map[$blog_id] = [
+                'code' => $dim_info['code'] ?: 'SHOP-' . $blog_id,
+                'name' => $site_title ?: ($dim_info['name'] ?: 'Shop #' . $blog_id),
             ];
         }
+
         return $map;
+    }
+
+    protected static function get_site_title($blog_id)
+    {
+        global $wpdb;
+
+        $title = '';
+        if (function_exists('get_blog_option')) {
+            $title = (string) get_blog_option($blog_id, 'blogname', '');
+        }
+
+        if ($title === '') {
+            $options_table = $wpdb->get_blog_prefix($blog_id) . 'options';
+            if ($wpdb->get_var("SHOW TABLES LIKE '{$options_table}'") === $options_table) {
+                $title = (string) $wpdb->get_var($wpdb->prepare(
+                    "SELECT option_value FROM {$options_table} WHERE option_name = %s LIMIT 1",
+                    'blogname'
+                ));
+            }
+        }
+
+        return self::clean_text($title);
+    }
+
+    protected static function clean_text($value)
+    {
+        $value = is_scalar($value) ? (string) $value : '';
+        $value = strip_tags($value);
+        $value = preg_replace('/\s+/u', ' ', $value);
+
+        return trim((string) $value);
     }
 
     /* ── Helper: switch blog & lấy prefix ── */
