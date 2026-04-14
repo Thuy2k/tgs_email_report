@@ -1,106 +1,173 @@
 <?php
 /**
- * Component: Cảnh báo MIN/MAX kho
- * Biến: $minmax
+ * Component: Cảnh báo MIN/MAX kho — chia theo shop
+ * Biến: $minmax  (có key by_shop, summary, below_min, above_max, stockout)
  */
 if (!defined('ABSPATH')) exit;
 $fmt = function($v) { return number_format((float)$v, 0, ',', '.'); };
-$sm = $minmax['summary'] ?? [];
+$sm       = $minmax['summary'] ?? [];
+$by_shop  = $minmax['by_shop'] ?? [];
+$shell    = 'margin-bottom:20px; background:#ffffff; border:1px solid #e3ebf3; border-radius:26px; padding:18px; box-shadow:0 14px 32px rgba(20, 46, 79, 0.07);';
+$th_style = 'padding:8px 10px; font-size:11px; color:#6480a0; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid #e6edf4;';
+$td_style = 'padding:8px 10px; border-bottom:1px solid #f0f4f8; font-size:12px;';
+$total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + ($sm['total_above_max'] ?? 0);
 ?>
-<div class="section">
-    <div class="section-title" style="font-size:16px; font-weight:700; color:#1e3a5f; margin:0 0 12px 0; padding-bottom:8px; border-bottom:2px solid #dc3545;">
-        Cảnh Báo MIN / MAX Tồn Kho
-    </div>
+<div class="section" style="<?php echo $shell; ?>">
+    <div style="font-size:24px; font-weight:700; color:#13273e; line-height:1.2; margin-bottom:16px;">Cảnh báo MIN / MAX</div>
 
-    <!-- Summary -->
+    <!-- Tổng quan -->
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:16px;">
         <tr>
-            <td width="50%" style="padding:0 6px 12px 0; vertical-align:top;">
-                <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #dc3545;">
-                    <div style="font-size:11px; color:#6c757d;">Dưới MIN</div>
-                    <div style="font-size:20px; font-weight:700; color:#dc3545;"><?php echo $sm['total_below_min'] ?? 0; ?></div>
+            <td width="33%" style="padding:0 4px 10px 0; vertical-align:top;">
+                <div style="background:#fef2f1; border:1px solid #f4dfdc; border-radius:18px; padding:12px 10px; text-align:center;">
+                    <div style="font-size:10px; color:#9b6d68; text-transform:uppercase; letter-spacing:0.8px;">Hết hàng</div>
+                    <div style="font-size:24px; font-weight:700; color:#cf3d32; margin-top:3px;"><?php echo $sm['total_stockout'] ?? 0; ?></div>
                 </div>
             </td>
-            <td width="50%" style="padding:0 0 12px 6px; vertical-align:top;">
-                <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #ffc107;">
-                    <div style="font-size:11px; color:#6c757d;">Vượt MAX</div>
-                    <div style="font-size:20px; font-weight:700; color:#856404;"><?php echo $sm['total_above_max'] ?? 0; ?></div>
+            <td width="34%" style="padding:0 4px 10px 4px; vertical-align:top;">
+                <div style="background:#fff8f0; border:1px solid #f0e5c9; border-radius:18px; padding:12px 10px; text-align:center;">
+                    <div style="font-size:10px; color:#9b8968; text-transform:uppercase; letter-spacing:0.8px;">Dưới MIN</div>
+                    <div style="font-size:24px; font-weight:700; color:#b8860b; margin-top:3px;"><?php echo $sm['total_below_min'] ?? 0; ?></div>
                 </div>
             </td>
-        </tr>
-        <tr>
-            <td width="50%" style="padding:0 6px 0 0; vertical-align:top;">
-                <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #ffc107;">
-                    <div style="font-size:11px; color:#6c757d;">Sắp Hết Hạn</div>
-                    <div style="font-size:20px; font-weight:700; color:#856404;"><?php echo $sm['total_near_expiry'] ?? 0; ?></div>
-                </div>
-            </td>
-            <td width="50%" style="padding:0 0 0 6px; vertical-align:top;">
-                <div style="background:#f8fafc; border-radius:8px; padding:14px 16px; border-left:4px solid #17a2b8;">
-                    <div style="font-size:11px; color:#6c757d;">Đề Xuất Mua</div>
-                    <div style="font-size:20px; font-weight:700; color:#0c5460;"><?php echo $sm['total_reorder'] ?? 0; ?></div>
+            <td width="33%" style="padding:0 0 10px 4px; vertical-align:top;">
+                <div style="background:#eef5ff; border:1px solid #dbe8f7; border-radius:18px; padding:12px 10px; text-align:center;">
+                    <div style="font-size:10px; color:#6480a0; text-transform:uppercase; letter-spacing:0.8px;">Vượt MAX</div>
+                    <div style="font-size:24px; font-weight:700; color:#2d5f8a; margin-top:3px;"><?php echo $sm['total_above_max'] ?? 0; ?></div>
                 </div>
             </td>
         </tr>
     </table>
 
-    <!-- Dưới MIN -->
-    <?php if (!empty($minmax['below_min'])): ?>
-    <div style="margin-bottom:16px;">
-        <strong style="color:#dc3545; font-size:14px;">🔻 Sản Phẩm Dưới MIN (<?php echo count($minmax['below_min']); ?>)</strong>
-        <div style="overflow-x:auto;">
-            <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;">
-                <tr>
-                    <th style="background:#f8d7da; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Shop</th>
-                    <th style="background:#f8d7da; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Sản phẩm</th>
-                    <th style="background:#f8d7da; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">Tồn</th>
-                    <th style="background:#f8d7da; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">MIN</th>
-                    <th style="background:#f8d7da; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">Thiếu</th>
-                </tr>
-                <?php foreach (array_slice($minmax['below_min'], 0, 20) as $item): ?>
-                <tr>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><?php echo esc_html($item['shop_name']); ?></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></span><br><span style="font-size:10px; color:#888;"><?php echo esc_html($item['sku']); ?></span></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#dc3545; font-weight:600;"><?php echo $fmt($item['closing_qty']); ?></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right;"><?php echo $fmt($item['min_qty']); ?></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#dc3545; font-weight:700;"><?php echo $fmt($item['shortage']); ?></td>
-                </tr>
-                <?php endforeach; ?>
-                <?php if (count($minmax['below_min']) > 20): ?>
-                <tr><td colspan="5" style="padding:6px 8px; color:#888; font-size:11px;">...và <?php echo count($minmax['below_min']) - 20; ?> mục khác</td></tr>
-                <?php endif; ?>
-            </table>
+    <?php if (empty($by_shop)): ?>
+        <div style="padding:14px 16px; border-radius:18px; background:#f3fbf6; color:#1f8f4d; border:1px solid #cce8d6; text-align:center;">
+            Không có cảnh báo tồn kho nào — tất cả đều trong ngưỡng.
         </div>
-    </div>
-    <?php endif; ?>
+    <?php else: ?>
+        <!-- Per-shop cards -->
+        <?php foreach ($by_shop as $bid => $shop):
+            $s_stockout  = $shop['total_stockout']  ?? 0;
+            $s_below     = $shop['total_below_min']  ?? 0;
+            $s_above     = $shop['total_above_max']  ?? 0;
+            $s_total     = $s_stockout + $s_below + $s_above;
+            if ($s_total === 0) continue;
 
-    <!-- Vượt MAX -->
-    <?php if (!empty($minmax['above_max'])): ?>
-    <div style="margin-bottom:16px;">
-        <strong style="color:#856404; font-size:14px;">🔺 Sản Phẩm Vượt MAX (<?php echo count($minmax['above_max']); ?>)</strong>
-        <div style="overflow-x:auto;">
-            <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;">
+            // Severity color for shop border
+            $border_color = $s_stockout > 0 ? '#f4dfdc' : ($s_below > 0 ? '#f0e5c9' : '#dbe8f7');
+            $bg_color     = $s_stockout > 0 ? '#fffbfa' : ($s_below > 0 ? '#fffdf8' : '#fafcff');
+        ?>
+        <div style="margin-bottom:14px; border:1px solid <?php echo $border_color; ?>; border-radius:22px; padding:14px 15px; background:<?php echo $bg_color; ?>;">
+            <!-- Shop header -->
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
-                    <th style="background:#fff3cd; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Shop</th>
-                    <th style="background:#fff3cd; padding:8px; text-align:left; border-bottom:1px solid #dee2e6;">Sản phẩm</th>
-                    <th style="background:#fff3cd; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">Tồn</th>
-                    <th style="background:#fff3cd; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">MAX</th>
-                    <th style="background:#fff3cd; padding:8px; text-align:right; border-bottom:1px solid #dee2e6;">Dư</th>
+                    <td style="vertical-align:middle;">
+                        <div style="font-size:16px; font-weight:700; color:#13273e;"><?php echo esc_html($shop['shop_name']); ?></div>
+                    </td>
+                    <td align="right" style="vertical-align:middle; white-space:nowrap;">
+                        <?php if ($s_stockout > 0): ?>
+                        <span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:#fff1f0; color:#cf3d32; margin-left:4px;"><?php echo $s_stockout; ?> hết hàng</span>
+                        <?php endif; ?>
+                        <?php if ($s_below > 0): ?>
+                        <span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:#fffcf5; color:#b8860b; margin-left:4px;"><?php echo $s_below; ?> dưới MIN</span>
+                        <?php endif; ?>
+                        <?php if ($s_above > 0): ?>
+                        <span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:#eef5ff; color:#2d5f8a; margin-left:4px;"><?php echo $s_above; ?> vượt MAX</span>
+                        <?php endif; ?>
+                    </td>
                 </tr>
-                <?php foreach (array_slice($minmax['above_max'], 0, 20) as $item): ?>
-                <tr>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><?php echo esc_html($item['shop_name']); ?></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></span><br><span style="font-size:10px; color:#888;"><?php echo esc_html($item['sku']); ?></span></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; font-weight:600;"><?php echo $fmt($item['closing_qty']); ?></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right;"><?php echo $fmt($item['max_qty']); ?></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#856404; font-weight:700;">+<?php echo $fmt($item['surplus']); ?></td>
-                </tr>
-                <?php endforeach; ?>
-                <?php if (count($minmax['above_max']) > 20): ?>
-                <tr><td colspan="5" style="padding:6px 8px; color:#888; font-size:11px;">...và <?php echo count($minmax['above_max']) - 20; ?> mục khác</td></tr>
-                <?php endif; ?>
             </table>
+
+            <?php /* ── Hết hàng ── */ ?>
+            <?php if ($s_stockout > 0): ?>
+            <div style="margin-top:12px;">
+                <div style="font-size:12px; font-weight:700; color:#cf3d32; margin-bottom:6px;">Hết hàng</div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <th style="<?php echo $th_style; ?> text-align:left;">Sản phẩm</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">Tồn</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">MIN</th>
+                    </tr>
+                    <?php foreach (array_slice($shop['stockout'], 0, 15) as $item): ?>
+                    <tr>
+                        <td style="<?php echo $td_style; ?>">
+                            <div style="font-weight:600; color:#13273e;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></div>
+                            <div style="font-size:10px; color:#77889a;"><?php echo esc_html($item['sku']); ?></div>
+                        </td>
+                        <td style="<?php echo $td_style; ?> text-align:right;">
+                            <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#fff1f0; color:#cf3d32;">0</span>
+                        </td>
+                        <td style="<?php echo $td_style; ?> text-align:right; color:#77889a;"><?php echo $fmt($item['min_qty']); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php if ($s_stockout > 15): ?>
+                    <tr><td colspan="3" style="padding:6px 10px; color:#77889a; font-size:11px;">...và <?php echo $s_stockout - 15; ?> mục khác</td></tr>
+                    <?php endif; ?>
+                </table>
+            </div>
+            <?php endif; ?>
+
+            <?php /* ── Dưới MIN ── */ ?>
+            <?php if ($s_below > 0): ?>
+            <div style="margin-top:12px;">
+                <div style="font-size:12px; font-weight:700; color:#b8860b; margin-bottom:6px;">Dưới MIN</div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <th style="<?php echo $th_style; ?> text-align:left;">Sản phẩm</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">Tồn</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">MIN</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">Thiếu</th>
+                    </tr>
+                    <?php foreach (array_slice($shop['below_min'], 0, 15) as $item): ?>
+                    <tr>
+                        <td style="<?php echo $td_style; ?>">
+                            <div style="font-weight:600; color:#13273e;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></div>
+                            <div style="font-size:10px; color:#77889a;"><?php echo esc_html($item['sku']); ?></div>
+                        </td>
+                        <td style="<?php echo $td_style; ?> text-align:right; color:#b8860b; font-weight:600;"><?php echo $fmt($item['closing_qty']); ?></td>
+                        <td style="<?php echo $td_style; ?> text-align:right; color:#77889a;"><?php echo $fmt($item['min_qty']); ?></td>
+                        <td style="<?php echo $td_style; ?> text-align:right;">
+                            <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#fffcf5; color:#b8860b;"><?php echo $fmt($item['shortage']); ?></span>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php if ($s_below > 15): ?>
+                    <tr><td colspan="4" style="padding:6px 10px; color:#77889a; font-size:11px;">...và <?php echo $s_below - 15; ?> mục khác</td></tr>
+                    <?php endif; ?>
+                </table>
+            </div>
+            <?php endif; ?>
+
+            <?php /* ── Vượt MAX ── */ ?>
+            <?php if ($s_above > 0): ?>
+            <div style="margin-top:12px;">
+                <div style="font-size:12px; font-weight:700; color:#2d5f8a; margin-bottom:6px;">Vượt MAX</div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <th style="<?php echo $th_style; ?> text-align:left;">Sản phẩm</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">Tồn</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">MAX</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">Dư</th>
+                    </tr>
+                    <?php foreach (array_slice($shop['above_max'], 0, 15) as $item): ?>
+                    <tr>
+                        <td style="<?php echo $td_style; ?>">
+                            <div style="font-weight:600; color:#13273e;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></div>
+                            <div style="font-size:10px; color:#77889a;"><?php echo esc_html($item['sku']); ?></div>
+                        </td>
+                        <td style="<?php echo $td_style; ?> text-align:right; font-weight:600;"><?php echo $fmt($item['closing_qty']); ?></td>
+                        <td style="<?php echo $td_style; ?> text-align:right; color:#77889a;"><?php echo $fmt($item['max_qty']); ?></td>
+                        <td style="<?php echo $td_style; ?> text-align:right;">
+                            <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#eef5ff; color:#2d5f8a;">+<?php echo $fmt($item['surplus']); ?></span>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php if ($s_above > 15): ?>
+                    <tr><td colspan="4" style="padding:6px 10px; color:#77889a; font-size:11px;">...và <?php echo $s_above - 15; ?> mục khác</td></tr>
+                    <?php endif; ?>
+                </table>
+            </div>
+            <?php endif; ?>
         </div>
-    </div>
+        <?php endforeach; ?>
     <?php endif; ?>
 </div>

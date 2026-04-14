@@ -6,7 +6,7 @@
  *
  * Data source:
  *   - tgs_fact_inventory_daily (closing_qty — snapshot mới nhất as-of date_to)
- *   - global_lot_item_shop_config (max_qty)
+ *   - global_sku_stock_config (max_qty)
  *
  * Dùng inventory_latest_join() để lấy snapshot mới nhất cho mỗi
  * (blog_id, sku, exp_date) — không bỏ sót SKU không có movement ngày cuối.

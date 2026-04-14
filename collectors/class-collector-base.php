@@ -140,7 +140,7 @@ abstract class TGS_Collector_Base
     protected static function config_table()
     {
         global $wpdb;
-        return $wpdb->base_prefix . 'global_lot_item_shop_config';
+        return $wpdb->base_prefix . 'global_sku_stock_config';
     }
 
     /* ── Helper: bảng reorder suggestion ── */

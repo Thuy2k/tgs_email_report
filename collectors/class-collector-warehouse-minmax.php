@@ -4,7 +4,7 @@
  *
  * Data source:
  *   - tgs_fact_inventory_daily (closing_qty — snapshot mới nhất as-of date_to)
- *   - global_lot_item_shop_config (min_qty, max_qty)
+ *   - global_sku_stock_config (min_qty, max_qty)
  *   - global_reorder_suggestion (đề xuất mua)
  *
  * Dùng inventory_latest_join() để lấy snapshot mới nhất cho mỗi
@@ -22,13 +22,16 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
         $result = [
             'below_min'     => [], // SP dưới MIN
             'above_max'     => [], // SP vượt MAX
+            'stockout'      => [], // SP hết hàng (closing_qty = 0, có cấu hình)
             'near_expiry'   => [], // SP sắp hết hạn (30 ngày)
             'reorder_suggestions' => [], // Đề xuất mua
+            'by_shop'       => [], // Gom theo shop: blog_id => {shop_name, below_min[], above_max[], stockout[]}
             'summary'       => [
-                'total_below_min' => 0,
-                'total_above_max' => 0,
+                'total_below_min'  => 0,
+                'total_above_max'  => 0,
+                'total_stockout'   => 0,
                 'total_near_expiry' => 0,
-                'total_reorder' => 0,
+                'total_reorder'    => 0,
             ],
         ];
 
@@ -46,7 +49,23 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
         $latest_join = $has_inv ? self::inventory_latest_join($inv_table, $date_to) : '';
         $prod_join   = $has_prod ? "LEFT JOIN {$prod_table} p ON p.sku = inv.sku" : '';
 
-        // ── 1) Dưới MIN ──
+        // Helper: khởi tạo mảng shop trong by_shop
+        $ensure_shop = function ($blog_id) use (&$result, $shop_names) {
+            if (!isset($result['by_shop'][$blog_id])) {
+                $info = $shop_names[$blog_id] ?? ['code' => '', 'name' => 'Shop #' . $blog_id];
+                $result['by_shop'][$blog_id] = [
+                    'shop_name'       => $info['name'],
+                    'below_min'       => [],
+                    'above_max'       => [],
+                    'stockout'        => [],
+                    'total_below_min' => 0,
+                    'total_above_max' => 0,
+                    'total_stockout'  => 0,
+                ];
+            }
+        };
+
+        // ── 1) Dưới MIN (closing_qty > 0 nhưng < min_qty) ──
         if ($has_config && $has_inv) {
             $below = $wpdb->get_results(
                 "SELECT
@@ -63,14 +82,14 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                  WHERE cfg.is_active = 1
                    AND cfg.min_qty > 0
                  GROUP BY inv.blog_id, inv.sku, p.product_name, cfg.min_qty, cfg.max_qty
-                 HAVING closing_qty < cfg.min_qty
+                 HAVING closing_qty < cfg.min_qty AND closing_qty > 0
                  ORDER BY shortage DESC
                  LIMIT 300"
             );
 
             foreach ($below as $r) {
                 $info = $shop_names[$r->blog_id] ?? ['code' => '', 'name' => 'Shop #' . $r->blog_id];
-                $result['below_min'][] = [
+                $item = [
                     'blog_id'      => $r->blog_id,
                     'shop_name'    => $info['name'],
                     'sku'          => $r->sku,
@@ -79,6 +98,10 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                     'min_qty'      => (float) $r->min_qty,
                     'shortage'     => (float) $r->shortage,
                 ];
+                $result['below_min'][] = $item;
+
+                $ensure_shop($r->blog_id);
+                $result['by_shop'][$r->blog_id]['below_min'][] = $item;
             }
             $result['summary']['total_below_min'] = count($below);
         }
@@ -107,7 +130,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
 
             foreach ($above as $r) {
                 $info = $shop_names[$r->blog_id] ?? ['code' => '', 'name' => 'Shop #' . $r->blog_id];
-                $result['above_max'][] = [
+                $item = [
                     'blog_id'      => $r->blog_id,
                     'shop_name'    => $info['name'],
                     'sku'          => $r->sku,
@@ -116,11 +139,68 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                     'max_qty'      => (float) $r->max_qty,
                     'surplus'      => (float) $r->surplus,
                 ];
+                $result['above_max'][] = $item;
+
+                $ensure_shop($r->blog_id);
+                $result['by_shop'][$r->blog_id]['above_max'][] = $item;
             }
             $result['summary']['total_above_max'] = count($above);
         }
 
-        // ── 3) Sắp hết hạn (30 ngày) ──
+        // ── 3) Hết hàng (closing_qty = 0, có cấu hình active) ──
+        if ($has_config && $has_inv) {
+            $oos = $wpdb->get_results(
+                "SELECT
+                    inv.blog_id, inv.sku,
+                    COALESCE(p.product_name, inv.sku) as product_name,
+                    SUM(inv.closing_qty) as closing_qty,
+                    cfg.min_qty
+                 FROM {$inv_table} inv
+                 {$latest_join}
+                 INNER JOIN {$config_table} cfg
+                    ON inv.blog_id = cfg.blog_id AND inv.sku = cfg.product_sku
+                 {$prod_join}
+                 WHERE cfg.is_active = 1
+                 GROUP BY inv.blog_id, inv.sku, p.product_name, cfg.min_qty
+                 HAVING closing_qty <= 0
+                 ORDER BY inv.blog_id, inv.sku
+                 LIMIT 300"
+            );
+
+            foreach ($oos as $r) {
+                $info = $shop_names[$r->blog_id] ?? ['code' => '', 'name' => 'Shop #' . $r->blog_id];
+                $item = [
+                    'blog_id'      => $r->blog_id,
+                    'shop_name'    => $info['name'],
+                    'sku'          => $r->sku,
+                    'product_name' => $r->product_name,
+                    'closing_qty'  => (float) $r->closing_qty,
+                    'min_qty'      => (float) $r->min_qty,
+                ];
+                $result['stockout'][] = $item;
+
+                $ensure_shop($r->blog_id);
+                $result['by_shop'][$r->blog_id]['stockout'][] = $item;
+            }
+            $result['summary']['total_stockout'] = count($oos);
+        }
+
+        // Cập nhật count per shop
+        foreach ($result['by_shop'] as $bid => &$shop_data) {
+            $shop_data['total_below_min'] = count($shop_data['below_min']);
+            $shop_data['total_above_max'] = count($shop_data['above_max']);
+            $shop_data['total_stockout']  = count($shop_data['stockout']);
+        }
+        unset($shop_data);
+
+        // Sắp xếp shop: shop có nhiều vấn đề nhất lên trước
+        uasort($result['by_shop'], function ($a, $b) {
+            $total_a = $a['total_stockout'] + $a['total_below_min'] + $a['total_above_max'];
+            $total_b = $b['total_stockout'] + $b['total_below_min'] + $b['total_above_max'];
+            return $total_b <=> $total_a;
+        });
+
+        // ── 4) Sắp hết hạn (30 ngày) ──
         if ($has_inv) {
             $near = $wpdb->get_results(
                 "SELECT inv.blog_id, inv.sku,
@@ -150,7 +230,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
             $result['summary']['total_near_expiry'] = count($near);
         }
 
-        // ── 4) Đề xuất mua ──
+        // ── 5) Đề xuất mua ──
         if ($has_reorder) {
             $reorders = $wpdb->get_results(
                 "SELECT * FROM {$reorder_tbl}
