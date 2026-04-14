@@ -32,7 +32,7 @@ foreach ($sales as $s) {
                     <tr>
                         <th style="background:#f0f4f8; color:#1e3a5f; padding:10px 8px; text-align:left; border-bottom:2px solid #dee2e6; white-space:nowrap;">Shop</th>
                         <th style="background:#f0f4f8; color:#1e3a5f; padding:10px 8px; text-align:right; border-bottom:2px solid #dee2e6; white-space:nowrap;">Đơn</th>
-                        <th style="background:#f0f4f8; color:#1e3a5f; padding:10px 8px; text-align:right; border-bottom:2px solid #dee2e6; white-space:nowrap;">Tổng Bán</th>
+                        <th style="background:#f0f4f8; color:#1e3a5f; padding:10px 8px; text-align:right; border-bottom:2px solid #dee2e6; white-space:nowrap;">Tiền Hàng Trước CK</th>
                         <th style="background:#f0f4f8; color:#1e3a5f; padding:10px 8px; text-align:right; border-bottom:2px solid #dee2e6; white-space:nowrap;">Chiết Khấu</th>
                         <th style="background:#f0f4f8; color:#1e3a5f; padding:10px 8px; text-align:right; border-bottom:2px solid #dee2e6; white-space:nowrap;">Trả Hàng</th>
                         <th style="background:#f0f4f8; color:#1e3a5f; padding:10px 8px; text-align:right; border-bottom:2px solid #dee2e6; white-space:nowrap;">Thực Thu</th>

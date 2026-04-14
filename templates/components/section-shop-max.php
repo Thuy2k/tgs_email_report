@@ -10,16 +10,16 @@ foreach ($max as $m) { $total_over += $m['total_over_max_items'] ?? 0; }
 ?>
 <div class="section">
     <div class="section-title" style="font-size:16px; font-weight:700; color:#1e3a5f; margin:0 0 12px 0; padding-bottom:8px; border-bottom:2px solid #2d5f8a;">
-        📦 MAX Tồn Kho Tại Shop
+        MAX Tồn Kho Tại Shop
     </div>
 
     <?php if (empty($max)): ?>
         <div class="alert alert-success" style="padding:12px 16px; border-radius:6px; background:#d4edda; color:#155724; border-left:4px solid #28a745;">
-            ✓ Không có sản phẩm nào vượt MAX tồn kho.
+            Không có sản phẩm nào vượt MAX tồn kho.
         </div>
     <?php else: ?>
         <div class="alert alert-warning" style="padding:12px 16px; border-radius:6px; background:#fff3cd; color:#856404; border-left:4px solid #ffc107; margin-bottom:12px;">
-            ⚠️ Có <strong><?php echo $total_over; ?></strong> sản phẩm vượt MAX tại <strong><?php echo count($max); ?></strong> shop.
+            Có <strong><?php echo $total_over; ?></strong> sản phẩm vượt MAX tại <strong><?php echo count($max); ?></strong> shop.
         </div>
 
         <?php foreach ($max as $blog_id => $shop): ?>

@@ -25,6 +25,8 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
 
         $result = [];
         $shop_names = self::get_shop_names();
+        $rollup_blog_ids = [];
+        $blogs = self::get_active_blog_ids();
 
         // Ưu tiên đọc từ bảng rollup (nhanh hơn nhiều)
         $fact_table = $wpdb->base_prefix . 'tgs_fact_sales_daily';
@@ -55,31 +57,49 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
 
             foreach ($rows as $r) {
                 $info = $shop_names[$r->blog_id] ?? ['code' => 'SHOP-' . $r->blog_id, 'name' => 'Shop #' . $r->blog_id];
+                $sales_after_discount = (float) $r->gross_revenue;
+                $discount_value = (float) $r->discount_value;
+                $return_value = (float) $r->return_value;
+                $net_revenue = (float) ($r->net_revenue ?? 0);
+
+                if ($sales_after_discount > 0 && $net_revenue <= 0) {
+                    $net_revenue = $sales_after_discount - $return_value;
+                }
+
+                // Hiển thị tiền hàng trước chiết khấu để công thức cột rõ ràng:
+                // Tiền hàng trước CK - Chiết khấu - Trả hàng = Thực thu.
+                $gross_revenue = $net_revenue + $discount_value + $return_value;
+                if ($gross_revenue <= 0 && $sales_after_discount > 0) {
+                    $gross_revenue = $sales_after_discount + $discount_value;
+                }
+
                 $result[$r->blog_id] = [
                     'shop_name'          => $info['name'],
                     'shop_code'          => $info['code'],
                     'order_count'        => (int) $r->order_count,
-                    'gross_revenue'      => (float) $r->gross_revenue,
-                    'net_revenue'        => (float) $r->net_revenue,
-                    'discount_value'     => (float) $r->discount_value,
+                    'gross_revenue'      => $gross_revenue,
+                    'net_revenue'        => $net_revenue,
+                    'discount_value'     => $discount_value,
                     'gift_value'         => (float) $r->gift_value,
-                    'return_value'       => (float) $r->return_value,
+                    'return_value'       => $return_value,
                     'cogs_value'         => (float) $r->cogs_value,
                     'gross_profit'       => (float) $r->gross_profit,
                     'gross_margin_pct'   => round((float) $r->gross_margin_pct, 2),
                     'customer_count'     => (int) $r->customer_count,
                     'new_customer_count' => (int) $r->new_customer_count,
-                    'avg_order_value'    => (float) $r->avg_order_value,
+                    'avg_order_value'    => (int) $r->order_count > 0 ? round($net_revenue / (int) $r->order_count) : 0,
                     'avg_items_per_order' => round((float) $r->avg_items_per_order, 1),
                 ];
+                $rollup_blog_ids[$r->blog_id] = true;
             }
-
-            return $result;
         }
 
-        // ── Fallback: query trực tiếp local_ledger của từng site ──
-        $blogs = self::get_active_blog_ids();
+        // ── Fallback / bù dữ liệu: query trực tiếp local_ledger cho shop chưa có rollup ──
         foreach ($blogs as $blog) {
+            if (isset($rollup_blog_ids[$blog->blog_id])) {
+                continue;
+            }
+
             $prefix = self::get_blog_prefix($blog->blog_id);
             $ledger = $prefix . 'local_ledger';
 
@@ -91,7 +111,7 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
             $row = $wpdb->get_row($wpdb->prepare(
                 "SELECT
                     COUNT(DISTINCT CASE WHEN local_ledger_type = 10 THEN local_ledger_id END) as order_count,
-                    COALESCE(SUM(CASE WHEN local_ledger_type = 10 THEN local_ledger_total_amount ELSE 0 END), 0) as gross_revenue,
+                    COALESCE(SUM(CASE WHEN local_ledger_type = 10 THEN local_ledger_total_amount ELSE 0 END), 0) as sales_after_discount,
                     COALESCE(SUM(CASE WHEN local_ledger_type = 10 THEN local_ledger_discount ELSE 0 END), 0) as discount_value,
                     COALESCE(SUM(CASE WHEN local_ledger_type = 11 THEN local_ledger_total_amount ELSE 0 END), 0) as return_value,
                     COUNT(DISTINCT CASE WHEN local_ledger_type = 10 THEN local_ledger_person_id END) as customer_count
@@ -108,17 +128,21 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
             }
 
             $info = $shop_names[$blog->blog_id] ?? ['code' => 'SHOP-' . $blog->blog_id, 'name' => 'Shop #' . $blog->blog_id];
-            $net = (float) $row->gross_revenue - (float) $row->discount_value - (float) $row->return_value;
+            $sales_after_discount = (float) $row->sales_after_discount;
+            $discount_value = (float) $row->discount_value;
+            $return_value = (float) $row->return_value;
+            $gross_revenue = $sales_after_discount + $discount_value;
+            $net = $sales_after_discount - $return_value;
 
             $result[$blog->blog_id] = [
                 'shop_name'          => $info['name'],
                 'shop_code'          => $info['code'],
                 'order_count'        => (int) $row->order_count,
-                'gross_revenue'      => (float) $row->gross_revenue,
+                'gross_revenue'      => $gross_revenue,
                 'net_revenue'        => $net,
-                'discount_value'     => (float) $row->discount_value,
+                'discount_value'     => $discount_value,
                 'gift_value'         => 0,
-                'return_value'       => (float) $row->return_value,
+                'return_value'       => $return_value,
                 'cogs_value'         => 0,
                 'gross_profit'       => $net,
                 'gross_margin_pct'   => 0,

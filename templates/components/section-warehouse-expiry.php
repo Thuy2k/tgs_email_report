@@ -10,7 +10,7 @@ $near = $minmax['near_expiry'] ?? [];
 <?php if (!empty($near)): ?>
 <div class="section">
     <div class="section-title" style="font-size:16px; font-weight:700; color:#1e3a5f; margin:0 0 12px 0; padding-bottom:8px; border-bottom:2px solid #ffc107;">
-        ⏰ Sắp Hết Hạn Sử Dụng (<?php echo count($near); ?> mục)
+        Sắp Hết Hạn Sử Dụng (<?php echo count($near); ?> mục)
     </div>
 
     <div style="overflow-x:auto;">

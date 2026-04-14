@@ -2,8 +2,8 @@
 /**
  * Collector: Summary — Tổng hợp toàn hệ thống + so sánh tuần
  *
- * Gom data từ tgs_fact_sales_daily + tgs_fact_inventory_daily
- * → tổng doanh thu, tổng tồn, so sánh với tuần trước
+ * Gom data từ collector doanh thu shop để phần tổng quan, top shop
+ * và so sánh tuần cùng dùng chung một nguồn số liệu.
  */
 
 if (!defined('ABSPATH')) exit;
@@ -12,8 +12,9 @@ class TGS_Collector_Summary extends TGS_Collector_Base
 {
     public static function collect($date_from, $date_to)
     {
-        global $wpdb;
-
+        $shop_names = self::get_all_shop_names();
+        $daily_sales = TGS_Collector_Shop_Sales::collect($date_from, $date_to);
+        $weekly_compare = self::build_weekly_compare($date_to);
         $result = [
             'shops'        => [],  // tên shops (for reference)
             'daily_total'  => [],  // tổng hệ thống ngày
@@ -22,131 +23,173 @@ class TGS_Collector_Summary extends TGS_Collector_Base
             'alerts'       => [],  // các cảnh báo quan trọng
         ];
 
-        $shop_names = self::get_shop_names();
         $result['shops'] = $shop_names;
+        $result['daily_total'] = self::aggregate_sales_totals($daily_sales);
+        $result['weekly_compare'] = $weekly_compare;
+        $result['top_shops'] = self::build_top_shops($daily_sales, $shop_names);
+        $result['alerts'] = self::build_alerts($date_from, $date_to, $daily_sales, $weekly_compare, $shop_names);
 
-        $fact_table = $wpdb->base_prefix . 'tgs_fact_sales_daily';
-        $has_rollup = ($wpdb->get_var("SHOW TABLES LIKE '{$fact_table}'") === $fact_table);
+        return $result;
+    }
 
-        if (!$has_rollup) {
-            return $result;
+    protected static function get_all_shop_names()
+    {
+        $shop_names = self::get_shop_names();
+        if (!empty($shop_names)) {
+            return $shop_names;
         }
 
-        // ── 1) Tổng hệ thống trong khoảng ngày ──
-        $total = $wpdb->get_row($wpdb->prepare(
-            "SELECT
-                SUM(order_count) as total_orders,
-                SUM(gross_revenue) as total_gross,
-                SUM(net_revenue) as total_net,
-                SUM(discount_value) as total_discount,
-                SUM(returned_value) as total_return,
-                SUM(cogs_value) as total_cogs,
-                SUM(gross_profit) as total_profit,
-                SUM(customer_count) as total_customers,
-                COUNT(DISTINCT blog_id) as active_shops
-             FROM {$fact_table}
-             WHERE rollup_date BETWEEN %s AND %s",
-            $date_from, $date_to
-        ));
-
-        $result['daily_total'] = [
-            'total_orders'    => (int) ($total->total_orders ?? 0),
-            'total_gross'     => (float) ($total->total_gross ?? 0),
-            'total_net'       => (float) ($total->total_net ?? 0),
-            'total_discount'  => (float) ($total->total_discount ?? 0),
-            'total_return'    => (float) ($total->total_return ?? 0),
-            'total_cogs'      => (float) ($total->total_cogs ?? 0),
-            'total_profit'    => (float) ($total->total_profit ?? 0),
-            'total_customers' => (int) ($total->total_customers ?? 0),
-            'active_shops'    => (int) ($total->active_shops ?? 0),
-        ];
-
-        // ── 2) So sánh tuần: tuần này vs tuần trước ──
-        $week_start = self::start_of_week($date_to);
-        $prev_week_start = date('Y-m-d', strtotime('-7 days', strtotime($week_start)));
-        $prev_week_end   = date('Y-m-d', strtotime('-1 day', strtotime($week_start)));
-
-        $this_week = $wpdb->get_row($wpdb->prepare(
-            "SELECT SUM(net_revenue) as net, SUM(order_count) as orders, SUM(gross_profit) as profit
-             FROM {$fact_table}
-             WHERE rollup_date BETWEEN %s AND %s",
-            $week_start, $date_to
-        ));
-
-        $prev_week = $wpdb->get_row($wpdb->prepare(
-            "SELECT SUM(net_revenue) as net, SUM(order_count) as orders, SUM(gross_profit) as profit
-             FROM {$fact_table}
-             WHERE rollup_date BETWEEN %s AND %s",
-            $prev_week_start, $prev_week_end
-        ));
-
-        $tw_net = (float) ($this_week->net ?? 0);
-        $pw_net = (float) ($prev_week->net ?? 0);
-        $change_pct = $pw_net > 0 ? round((($tw_net - $pw_net) / $pw_net) * 100, 1) : 0;
-
-        $result['weekly_compare'] = [
-            'this_week_net'     => $tw_net,
-            'this_week_orders'  => (int) ($this_week->orders ?? 0),
-            'this_week_profit'  => (float) ($this_week->profit ?? 0),
-            'prev_week_net'     => $pw_net,
-            'prev_week_orders'  => (int) ($prev_week->orders ?? 0),
-            'prev_week_profit'  => (float) ($prev_week->profit ?? 0),
-            'change_pct'        => $change_pct,
-            'week_start'        => $week_start,
-            'prev_week_start'   => $prev_week_start,
-            'prev_week_end'     => $prev_week_end,
-        ];
-
-        // ── 3) Top 5 shop ──
-        $tops = $wpdb->get_results($wpdb->prepare(
-            "SELECT blog_id, SUM(net_revenue) as net
-             FROM {$fact_table}
-             WHERE rollup_date BETWEEN %s AND %s
-             GROUP BY blog_id
-             ORDER BY net DESC
-             LIMIT 5",
-            $date_from, $date_to
-        ));
-
-        foreach ($tops as $t) {
-            $info = $shop_names[$t->blog_id] ?? ['code' => '', 'name' => 'Shop #' . $t->blog_id];
-            $result['top_shops'][] = [
-                'blog_id'   => $t->blog_id,
-                'shop_name' => $info['name'],
-                'net'       => (float) $t->net,
+        $fallback = [];
+        foreach (self::get_active_blog_ids() as $blog) {
+            $fallback[$blog->blog_id] = [
+                'code' => 'SHOP-' . $blog->blog_id,
+                'name' => 'Shop #' . $blog->blog_id,
             ];
         }
 
-        // ── 4) Cảnh báo tự động ──
-        // Shop không có doanh thu hôm nay
-        if ($date_from === $date_to) {
-            $active_today = $wpdb->get_col($wpdb->prepare(
-                "SELECT DISTINCT blog_id FROM {$fact_table} WHERE rollup_date = %s",
-                $date_to
-            ));
-            $all_shops = array_keys($shop_names);
-            $inactive = array_diff($all_shops, $active_today);
+        return $fallback;
+    }
 
-            foreach ($inactive as $bid) {
-                $info = $shop_names[$bid] ?? ['code' => '', 'name' => 'Shop #' . $bid];
-                $result['alerts'][] = [
-                    'type'    => 'no_sale',
-                    'level'   => 'warning',
+    protected static function aggregate_sales_totals($sales_rows)
+    {
+        $totals = [
+            'total_orders' => 0,
+            'total_gross' => 0.0,
+            'total_net' => 0.0,
+            'total_discount' => 0.0,
+            'total_return' => 0.0,
+            'total_cogs' => 0.0,
+            'total_profit' => 0.0,
+            'total_customers' => 0,
+            'active_shops' => 0,
+        ];
+
+        foreach ($sales_rows as $row) {
+            $orders = (int) ($row['order_count'] ?? 0);
+            $totals['total_orders'] += $orders;
+            $totals['total_gross'] += (float) ($row['gross_revenue'] ?? 0);
+            $totals['total_net'] += (float) ($row['net_revenue'] ?? 0);
+            $totals['total_discount'] += (float) ($row['discount_value'] ?? 0);
+            $totals['total_return'] += (float) ($row['return_value'] ?? 0);
+            $totals['total_cogs'] += (float) ($row['cogs_value'] ?? 0);
+            $totals['total_profit'] += (float) ($row['gross_profit'] ?? 0);
+            $totals['total_customers'] += (int) ($row['customer_count'] ?? 0);
+
+            if ($orders > 0) {
+                $totals['active_shops']++;
+            }
+        }
+
+        return $totals;
+    }
+
+    protected static function build_weekly_compare($date_to)
+    {
+        $week_start = self::start_of_week($date_to);
+        $prev_week_start = date('Y-m-d', strtotime('-7 days', strtotime($week_start)));
+        $prev_week_end = date('Y-m-d', strtotime('-1 day', strtotime($week_start)));
+
+        $this_week_totals = self::aggregate_sales_totals(TGS_Collector_Shop_Sales::collect($week_start, $date_to));
+        $prev_week_totals = self::aggregate_sales_totals(TGS_Collector_Shop_Sales::collect($prev_week_start, $prev_week_end));
+
+        $tw_net = (float) $this_week_totals['total_net'];
+        $pw_net = (float) $prev_week_totals['total_net'];
+        $change_pct = $pw_net > 0 ? round((($tw_net - $pw_net) / $pw_net) * 100, 1) : 0;
+
+        return [
+            'this_week_net' => $tw_net,
+            'this_week_orders' => (int) $this_week_totals['total_orders'],
+            'this_week_profit' => (float) $this_week_totals['total_profit'],
+            'prev_week_net' => $pw_net,
+            'prev_week_orders' => (int) $prev_week_totals['total_orders'],
+            'prev_week_profit' => (float) $prev_week_totals['total_profit'],
+            'change_pct' => $change_pct,
+            'week_start' => $week_start,
+            'prev_week_start' => $prev_week_start,
+            'prev_week_end' => $prev_week_end,
+        ];
+    }
+
+    protected static function build_top_shops($sales_rows, $shop_names)
+    {
+        $top_shops = [];
+
+        foreach ($sales_rows as $blog_id => $row) {
+            $info = $shop_names[$blog_id] ?? [
+                'code' => $row['shop_code'] ?? 'SHOP-' . $blog_id,
+                'name' => $row['shop_name'] ?? 'Shop #' . $blog_id,
+            ];
+
+            $top_shops[] = [
+                'blog_id' => $blog_id,
+                'shop_name' => $info['name'],
+                'order_count' => (int) ($row['order_count'] ?? 0),
+                'net' => (float) ($row['net_revenue'] ?? 0),
+            ];
+        }
+
+        usort($top_shops, function ($left, $right) {
+            return $right['net'] <=> $left['net'];
+        });
+
+        return array_slice($top_shops, 0, 5);
+    }
+
+    protected static function build_alerts($date_from, $date_to, $daily_sales, $weekly_compare, $shop_names)
+    {
+        $alerts = [];
+
+        if ($date_from === $date_to) {
+            $active_today = array_fill_keys(array_keys($daily_sales), true);
+
+            foreach ($shop_names as $blog_id => $info) {
+                if (isset($active_today[$blog_id])) {
+                    continue;
+                }
+
+                if (self::has_confirmed_sales($blog_id, $date_from, $date_to)) {
+                    continue;
+                }
+
+                $alerts[] = [
+                    'type' => 'no_sale',
+                    'level' => 'warning',
                     'message' => $info['name'] . ' — không có doanh thu ngày ' . date('d/m', strtotime($date_to)),
-                    'blog_id' => $bid,
+                    'blog_id' => $blog_id,
                 ];
             }
         }
 
-        // Doanh thu giảm >20% so với tuần trước
-        if ($change_pct < -20) {
-            $result['alerts'][] = [
-                'type'    => 'revenue_drop',
-                'level'   => 'danger',
-                'message' => sprintf('Doanh thu tuần giảm %.1f%% so với tuần trước!', abs($change_pct)),
+        if (($weekly_compare['change_pct'] ?? 0) < -20) {
+            $alerts[] = [
+                'type' => 'revenue_drop',
+                'level' => 'danger',
+                'message' => sprintf('Doanh thu tuần giảm %.1f%% so với tuần trước!', abs($weekly_compare['change_pct'])),
             ];
         }
 
-        return $result;
+        return $alerts;
+    }
+
+    protected static function has_confirmed_sales($blog_id, $date_from, $date_to)
+    {
+        global $wpdb;
+
+        $ledger = self::get_blog_prefix($blog_id) . 'local_ledger';
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$ledger}'") !== $ledger) {
+            return false;
+        }
+
+        $sales_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(1)
+             FROM {$ledger}
+             WHERE local_ledger_type = 10
+               AND local_ledger_status IN (2, 4)
+               AND is_deleted = 0
+               AND DATE(created_at) BETWEEN %s AND %s",
+            $date_from, $date_to
+        ));
+
+        return (int) $sales_count > 0;
     }
 }

@@ -12,7 +12,7 @@ $color = $change > 0 ? '#28a745' : ($change < 0 ? '#dc3545' : '#6c757d');
 ?>
 <div class="section">
     <div class="section-title" style="font-size:16px; font-weight:700; color:#1e3a5f; margin:0 0 12px 0; padding-bottom:8px; border-bottom:2px solid #2d5f8a;">
-        📈 So Sánh Tuần
+        So Sánh Tuần
     </div>
 
     <?php if (empty($wc) || ($wc['this_week_net'] == 0 && $wc['prev_week_net'] == 0)): ?>

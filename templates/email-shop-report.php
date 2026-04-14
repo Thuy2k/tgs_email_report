@@ -44,7 +44,7 @@ ob_start();
 
 <?php
 $body_content = ob_get_clean();
-$subject = sprintf('[TGS] Báo cáo bán hàng Shop — %s',
+$subject = sprintf('Báo cáo bán hàng Chi nhánh Phú Thọ',
     ($date_from === $date_to) ? date('d/m/Y', strtotime($date_from))
         : date('d/m', strtotime($date_from)) . ' → ' . date('d/m/Y', strtotime($date_to))
 );
