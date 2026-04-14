@@ -24,6 +24,7 @@ class TGS_Email_Ajax
             'tgs_email_send_shop',
             'tgs_email_send_warehouse',
             'tgs_email_send_all',
+            'tgs_email_send_individual',
             'tgs_email_get_logs',
             'tgs_email_get_log_detail',
             'tgs_email_resend',
@@ -130,6 +131,49 @@ class TGS_Email_Ajax
                 $wh_result['success'] ? '✓ OK' : '✗ Lỗi'
             ),
         ]);
+    }
+
+    /* ════════════════════════════════════════════
+     *  GỬI RIÊNG CHO 1 NGƯỜI NHẬN
+     * ════════════════════════════════════════════ */
+    public static function handle_send_individual()
+    {
+        self::check();
+        list($date_from, $date_to) = self::parse_dates();
+
+        $recipient_id = (int) ($_POST['recipient_id'] ?? 0);
+        $email_type   = sanitize_text_field($_POST['email_type'] ?? '');
+
+        if (!$recipient_id || !in_array($email_type, [TGS_EMAIL_TYPE_SHOP, TGS_EMAIL_TYPE_WAREHOUSE], true)) {
+            wp_send_json_error(['message' => 'Thiếu thông tin recipient hoặc loại báo cáo']);
+        }
+
+        // Lấy thông tin recipient
+        global $wpdb;
+        $rcpt = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM " . TGS_EMAIL_TABLE_RECIPIENTS . " WHERE recipient_id = %d",
+            $recipient_id
+        ));
+
+        if (!$rcpt) {
+            wp_send_json_error(['message' => 'Không tìm thấy người nhận #' . $recipient_id]);
+        }
+
+        $uid = get_current_user_id();
+        $override_recipients = ['to' => [$rcpt->email], 'cc' => []];
+
+        if ($email_type === TGS_EMAIL_TYPE_SHOP) {
+            $result = TGS_Email_Sender::send_shop_report($date_from, $date_to, 'manual_individual', $uid, $override_recipients);
+        } else {
+            $result = TGS_Email_Sender::send_warehouse_report($date_from, $date_to, 'manual_individual', $uid, $override_recipients);
+        }
+
+        if ($result['success']) {
+            $result['message'] = 'Đã gửi riêng cho ' . ($rcpt->display_name ?: $rcpt->email) . '!';
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error($result);
+        }
     }
 
     /* ════════════════════════════════════════════

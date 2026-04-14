@@ -127,7 +127,12 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
          RECIPIENTS (CC)
          ════════════════════════════════════════ -->
     <div class="tgs-email-card" style="background:#fff; border-radius:8px; padding:20px 24px; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:20px;">
-        <h3 style="margin:0 0 16px; font-size:16px; color:#1e3a5f; border-bottom:1px solid #eee; padding-bottom:8px;">👥 Danh Sách Người Nhận</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #eee; padding-bottom:8px; flex-wrap:wrap; gap:8px;">
+            <h3 style="margin:0; font-size:16px; color:#1e3a5f;">👥 Danh Sách Người Nhận</h3>
+            <div id="tgs-rcpt-date-info" style="background:#e3f2fd; color:#1565c0; padding:4px 14px; border-radius:4px; font-size:12px; font-weight:600;">
+                📅 Đang chọn: <span id="tgs-rcpt-date-label"><?php echo esc_html(date('d/m/Y', strtotime($today))); ?></span>
+            </div>
+        </div>
 
         <!-- Form thêm -->
         <div style="background:#f8fafc; border-radius:8px; padding:16px; margin-bottom:16px; border:1px dashed #dee2e6;">

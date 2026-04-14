@@ -127,7 +127,7 @@
         }
 
         var html = '<table class="tgs-rcpt-table">';
-        html += '<tr><th>Email</th><th>Tên</th><th>Vai trò</th><th style="text-align:center;">🛒 Shop</th><th style="text-align:center;">📦 Kho</th><th style="text-align:center;">Trạng thái</th><th></th></tr>';
+        html += '<tr><th>Email</th><th>Tên</th><th>Vai trò</th><th style="text-align:center;">🛒 Shop</th><th style="text-align:center;">📦 Kho</th><th style="text-align:center;">Trạng thái</th><th>Gửi riêng</th><th></th></tr>';
 
         list.forEach(function (r) {
             var types = [];
@@ -164,6 +164,20 @@
             html += '<td style="text-align:center;">' + shopCell + '</td>';
             html += '<td style="text-align:center;">' + whCell + '</td>';
             html += '<td style="text-align:center;">' + activeBtn + '</td>';
+            // Per-recipient send buttons
+            var sendBtns = '';
+            if (isActive) {
+                if (hasShop) {
+                    sendBtns += '<button class="button btn-send-individual" data-id="' + r.recipient_id + '" data-type="shop_report" style="font-size:10px; padding:2px 6px; color:#2d5f8a; margin-right:2px;" title="Gửi báo cáo Shop riêng">🛒</button>';
+                }
+                if (hasWh) {
+                    sendBtns += '<button class="button btn-send-individual" data-id="' + r.recipient_id + '" data-type="warehouse_report" style="font-size:10px; padding:2px 6px; color:#17a2b8;" title="Gửi báo cáo Kho riêng">📦</button>';
+                }
+            } else {
+                sendBtns = '<span style="color:#ccc; font-size:11px;">—</span>';
+            }
+            html += '<td style="text-align:center; white-space:nowrap;">' + sendBtns + '</td>';
+
             html += '<td style="white-space:nowrap;">'
                 + '<button class="button btn-edit-rcpt"' + dataAttr + ' style="font-size:11px; padding:2px 8px; color:#2d5f8a; margin-right:4px;">✎ Sửa</button>'
                 + '<button class="button btn-delete-rcpt" data-id="' + r.recipient_id + '" style="font-size:11px; padding:2px 8px; color:#dc3545;">✕ Xóa</button>'
@@ -577,12 +591,63 @@
     }
 
     /* ────────────────────────────────────────
+     * DATE RANGE SYNC → Recipients section
+     * ──────────────────────────────────────── */
+    function updateRecipientDateLabel() {
+        var dates = getDates();
+        if (!dates.date_from || !dates.date_to) return;
+        var from = formatDateVN(dates.date_from);
+        var to = formatDateVN(dates.date_to);
+        var label = (dates.date_from === dates.date_to) ? from : (from + ' → ' + to);
+        $('#tgs-rcpt-date-label').text(label);
+    }
+
+    function formatDateVN(ymd) {
+        var parts = ymd.split('-');
+        if (parts.length !== 3) return ymd;
+        return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+
+    $(document).on('change', '#tgs-email-date-from, #tgs-email-date-to', function () {
+        updateRecipientDateLabel();
+    });
+
+    /* ────────────────────────────────────────
+     * SEND INDIVIDUAL — Gửi riêng cho 1 người
+     * ──────────────────────────────────────── */
+    $(document).on('click', '.btn-send-individual', function () {
+        var $btn = $(this);
+        var recipientId = $btn.data('id');
+        var emailType = $btn.data('type');
+        var typeName = emailType === 'shop_report' ? 'Shop' : 'Kho';
+        var dates = getDates();
+
+        if (!confirm('Gửi báo cáo ' + typeName + ' riêng cho người này?\n(' + dates.date_from + ' → ' + dates.date_to + ')')) return;
+
+        setLoading($btn, true);
+        ajaxPost('tgs_email_send_individual', {
+            recipient_id: recipientId,
+            email_type: emailType,
+            date_from: dates.date_from,
+            date_to: dates.date_to
+        }, function (data) {
+            setLoading($btn, false);
+            showToast(data.message || 'Đã gửi!', 'success');
+            loadRecentLogs();
+        }, function (msg) {
+            setLoading($btn, false);
+            showToast(msg, 'error');
+        });
+    });
+
+    /* ────────────────────────────────────────
      * INIT
      * ──────────────────────────────────────── */
     $(document).ready(function () {
         // Dashboard page
         if ($('#tgs-recipients-list').length) {
             loadRecipients();
+            updateRecipientDateLabel();
         }
         if ($('#tgs-email-recent-logs').length) {
             loadRecentLogs();

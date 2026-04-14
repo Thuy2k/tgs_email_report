@@ -16,7 +16,7 @@ class TGS_Email_Sender
     /* ================================================================
      *  1) GỬI BÁO CÁO SHOP  (bán hàng + thu ngân hàng + MAX tại shop)
      * ================================================================ */
-    public static function send_shop_report($date_from, $date_to, $triggered_by = 'manual', $user_id = 0)
+    public static function send_shop_report($date_from, $date_to, $triggered_by = 'manual', $user_id = 0, $override_recipients = null)
     {
         // ── Collect data từ các collector ──
         $sales_data     = TGS_Collector_Shop_Sales::collect($date_from, $date_to);
@@ -45,7 +45,7 @@ class TGS_Email_Sender
         );
 
         // ── Recipients ──
-        $recipients = self::get_recipients(TGS_EMAIL_TYPE_SHOP);
+        $recipients = $override_recipients ?: self::get_recipients(TGS_EMAIL_TYPE_SHOP);
 
         // ── Send ──
         return self::do_send($subject, $html, $recipients, TGS_EMAIL_TYPE_SHOP, $date_from, $date_to, $all_data, $triggered_by, $user_id);
@@ -54,7 +54,7 @@ class TGS_Email_Sender
     /* ================================================================
      *  2) GỬI BÁO CÁO KHO  (MIN/MAX, tồn, cần mua, cảnh báo)
      * ================================================================ */
-    public static function send_warehouse_report($date_from, $date_to, $triggered_by = 'manual', $user_id = 0)
+    public static function send_warehouse_report($date_from, $date_to, $triggered_by = 'manual', $user_id = 0, $override_recipients = null)
     {
         // ── Collect data từ các collector ──
         $minmax_data = TGS_Collector_Warehouse_MinMax::collect($date_from, $date_to);
@@ -81,7 +81,7 @@ class TGS_Email_Sender
         );
 
         // ── Recipients ──
-        $recipients = self::get_recipients(TGS_EMAIL_TYPE_WAREHOUSE);
+        $recipients = $override_recipients ?: self::get_recipients(TGS_EMAIL_TYPE_WAREHOUSE);
 
         // ── Send ──
         return self::do_send($subject, $html, $recipients, TGS_EMAIL_TYPE_WAREHOUSE, $date_from, $date_to, $all_data, $triggered_by, $user_id);
@@ -199,6 +199,11 @@ class TGS_Email_Sender
         global $wpdb;
         $table = TGS_EMAIL_TABLE_RECIPIENTS;
 
+        // Kiểm tra có recipient nào được cấu hình không (kể cả inactive)
+        $total_configured = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$table}"
+        );
+
         $rows = $wpdb->get_results($wpdb->prepare(
             "SELECT email, display_name, role_label FROM {$table}
              WHERE is_active = 1
@@ -217,8 +222,9 @@ class TGS_Email_Sender
             }
         }
 
-        // Fallback: admin email
-        if (empty($to)) {
+        // Fallback: chỉ dùng admin email khi CHƯA cấu hình recipient nào
+        // Nếu đã cấu hình nhưng tất cả đều tắt → không gửi
+        if (empty($to) && $total_configured === 0) {
             $to[] = get_option('admin_email');
         }
 
