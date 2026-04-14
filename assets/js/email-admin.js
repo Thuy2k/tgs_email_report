@@ -127,7 +127,16 @@
         }
 
         var html = '<table class="tgs-rcpt-table">';
-        html += '<tr><th>Email</th><th>Tên</th><th>Vai trò</th><th style="text-align:center;">🛒 Shop</th><th style="text-align:center;">📦 Kho</th><th style="text-align:center;">Trạng thái</th><th></th></tr>';
+        html += '<tr>'
+            + '<th>Email</th>'
+            + '<th>Tên</th>'
+            + '<th>Vai trò</th>'
+            + '<th style="text-align:center;">Báo cáo Shop</th>'
+            + '<th style="text-align:center;">Báo cáo Kho</th>'
+            + '<th style="text-align:center;">Trạng thái</th>'
+            + '<th style="text-align:center;">Gửi riêng</th>'
+            + '<th></th>'
+            + '</tr>';
 
         list.forEach(function (r) {
             var types = [];
@@ -137,17 +146,17 @@
             var isActive = parseInt(r.is_active);
 
             var shopCell = hasShop
-                ? '<span style="color:#28a745; font-weight:700;">✓</span>'
-                : '<span style="color:#ccc;">—</span>';
+                ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
+                : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
             var whCell = hasWh
-                ? '<span style="color:#28a745; font-weight:700;">✓</span>'
-                : '<span style="color:#ccc;">—</span>';
+                ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
+                : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
 
-            var activeBtn = isActive
-                ? '<button class="btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="0" style="background:#e8f5e9; color:#28a745; border:1px solid #c8e6c9; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer; font-weight:600;">Đang bật</button>'
-                : '<button class="btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="1" style="background:#fff3e0; color:#e65100; border:1px solid #ffe0b2; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer;">Đã tắt</button>';
+            var statusHtml = isActive
+                ? '<span class="tgs-er-status tgs-er-status--on btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="0">Đang bật</span>'
+                : '<span class="tgs-er-status tgs-er-status--off btn-toggle-rcpt" data-id="' + r.recipient_id + '" data-active="1">Đã tắt</span>';
 
-            var rowStyle = isActive ? '' : ' style="opacity:0.5;"';
+            var rowClass = isActive ? '' : ' class="tgs-er-row-disabled"';
 
             // Encode data for edit
             var dataAttr = ' data-id="' + r.recipient_id + '"'
@@ -157,16 +166,30 @@
                 + ' data-shop="' + (hasShop ? '1' : '0') + '"'
                 + ' data-wh="' + (hasWh ? '1' : '0') + '"';
 
-            html += '<tr' + rowStyle + '>';
+            // Per-recipient send buttons
+            var sendBtns = '';
+            if (isActive) {
+                if (hasShop) {
+                    sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="shop_report" title="Gửi báo cáo Shop riêng" style="margin-right:4px;">Shop</button>';
+                }
+                if (hasWh) {
+                    sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="warehouse_report" title="Gửi báo cáo Kho riêng">Kho</button>';
+                }
+            } else {
+                sendBtns = '<span style="color:#ccc;">—</span>';
+            }
+
+            html += '<tr' + rowClass + '>';
             html += '<td><strong>' + escHtml(r.email) + '</strong></td>';
             html += '<td>' + escHtml(r.display_name) + '</td>';
             html += '<td>' + escHtml(r.role_label) + '</td>';
             html += '<td style="text-align:center;">' + shopCell + '</td>';
             html += '<td style="text-align:center;">' + whCell + '</td>';
-            html += '<td style="text-align:center;">' + activeBtn + '</td>';
+            html += '<td style="text-align:center;">' + statusHtml + '</td>';
+            html += '<td style="text-align:center; white-space:nowrap;">' + sendBtns + '</td>';
             html += '<td style="white-space:nowrap;">'
-                + '<button class="button btn-edit-rcpt"' + dataAttr + ' style="font-size:11px; padding:2px 8px; color:#2d5f8a; margin-right:4px;">✎ Sửa</button>'
-                + '<button class="button btn-delete-rcpt" data-id="' + r.recipient_id + '" style="font-size:11px; padding:2px 8px; color:#dc3545;">✕ Xóa</button>'
+                + '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-edit-rcpt"' + dataAttr + '>Sửa</button> '
+                + '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-danger btn-delete-rcpt" data-id="' + r.recipient_id + '">Xóa</button>'
                 + '</td>';
             html += '</tr>';
         });
@@ -176,10 +199,8 @@
     }
 
     // Toggle type buttons (Shop / Kho)
-    $(document).on('click', '.rcpt-type-btn', function () {
-        var $btn = $(this);
-        $btn.toggleClass('active');
-        setTypeBtn('#' + $btn.attr('id'), $btn.hasClass('active'));
+    $(document).on('click', '.tgs-er-toggle', function () {
+        $(this).toggleClass('active');
     });
 
     var editingRecipientId = 0; // 0 = add mode, >0 = edit mode
@@ -222,24 +243,8 @@
         $('#rcpt-email').prop('disabled', false);
         $('#btn-add-recipient').html('+ Thêm');
         $('#btn-cancel-edit').remove();
-        // Reset buttons to active
-        setTypeBtn('#rcpt-type-shop', true);
-        setTypeBtn('#rcpt-type-wh', true);
-    }
-
-    function setTypeBtn(sel, active) {
-        var $b = $(sel);
-        if (active) {
-            $b.addClass('active');
-            if ($b.data('value') === 'shop_report') {
-                $b.css({ background: '#e3f0ff', border: '2px solid #2d5f8a', color: '#1e3a5f' });
-            } else {
-                $b.css({ background: '#e8f5e9', border: '2px solid #28a745', color: '#1b5e20' });
-            }
-        } else {
-            $b.removeClass('active');
-            $b.css({ background: '#f5f5f5', border: '2px solid #ccc', color: '#999' });
-        }
+        // Reset toggles to active
+        $('#rcpt-type-shop, #rcpt-type-wh').addClass('active');
     }
 
     // Edit recipient — fill form
@@ -249,12 +254,12 @@
         $('#rcpt-email').val($btn.data('email')).prop('disabled', true);
         $('#rcpt-name').val($btn.data('name'));
         $('#rcpt-role').val($btn.data('role'));
-        setTypeBtn('#rcpt-type-shop', $btn.data('shop') == 1);
-        setTypeBtn('#rcpt-type-wh', $btn.data('wh') == 1);
-        $('#btn-add-recipient').html('💾 Lưu');
+        $('#rcpt-type-shop').toggleClass('active', $btn.data('shop') == 1);
+        $('#rcpt-type-wh').toggleClass('active', $btn.data('wh') == 1);
+        $('#btn-add-recipient').html('Lưu thay đổi');
         // Add cancel button if not exists
         if (!$('#btn-cancel-edit').length) {
-            $('<button id="btn-cancel-edit" class="button" style="padding:8px 16px; height:36px; margin-left:6px;">Hủy</button>')
+            $('<button id="btn-cancel-edit" class="tgs-er-btn tgs-er-btn-outline" style="height:36px; margin-left:6px;">Hủy</button>')
                 .insertAfter('#btn-add-recipient');
         }
         // Scroll to form
@@ -321,32 +326,28 @@
         var display = limit ? rows.slice(0, limit) : rows;
 
         var html = '<table class="tgs-log-table">';
-        html += '<tr><th>#</th><th>Loại</th><th>Subject</th><th>Ngày</th><th>Trạng thái</th><th>Gửi</th><th></th></tr>';
+        html += '<tr><th>#</th><th>Tiêu đề</th><th>Ngày</th><th>Kết quả</th><th>Nguồn</th><th>Thời gian</th><th></th></tr>';
 
         display.forEach(function (l) {
-            var statusBadge = '';
-            switch (parseInt(l.send_status)) {
-                case 1: statusBadge = '<span class="tgs-badge tgs-badge-success">✓ OK</span>'; break;
-                case 2: statusBadge = '<span class="tgs-badge tgs-badge-danger">✗ Lỗi</span>'; break;
-                default: statusBadge = '<span class="tgs-badge tgs-badge-warning">⏳ Đang</span>';
-            }
+            var statusText = '<span style="color:#856404;">Đang gửi</span>';
+            if (l.send_status == 1) statusText = '<span style="color:#155724;font-weight:600;">Thành công</span>';
+            else if (l.send_status == 2) statusText = '<span style="color:#721c24;font-weight:600;">Lỗi</span>';
 
-            var typeBadge = l.email_type === 'shop_report'
-                ? '<span class="tgs-badge tgs-badge-info">Shop</span>'
-                : '<span class="tgs-badge tgs-badge-success">Kho</span>';
+            var triggerNames = {'manual':'Bấm gửi','manual_individual':'Gửi riêng','url_admin':'Bấm gửi','url_cron':'Hẹn giờ','resend':'Gửi lại'};
+            var sourceText = triggerNames[l.triggered_by] || l.triggered_by || '—';
 
             var dateRange = l.date_from === l.date_to ? l.date_from : l.date_from + ' → ' + l.date_to;
 
             html += '<tr>';
             html += '<td>#' + l.log_id + '</td>';
-            html += '<td>' + typeBadge + '</td>';
-            html += '<td style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escHtml(l.subject) + '</td>';
+            html += '<td style="max-width:350px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escHtml(l.subject) + '</td>';
             html += '<td style="white-space:nowrap;">' + dateRange + '</td>';
-            html += '<td>' + statusBadge + '</td>';
-            html += '<td style="font-size:11px; white-space:nowrap;">' + escHtml(l.triggered_by || 'manual') + '<br>' + escHtml(l.created_at || '') + '</td>';
+            html += '<td>' + statusText + '</td>';
+            html += '<td>' + escHtml(sourceText) + '</td>';
+            html += '<td style="font-size:11px; white-space:nowrap; color:#6c757d;">' + escHtml(l.created_at || '') + '</td>';
             html += '<td style="white-space:nowrap;">';
-            html += '<button class="button btn-view-log" data-id="' + l.log_id + '" style="font-size:11px; padding:2px 8px;">👁️</button> ';
-            html += '<button class="button btn-resend-log" data-id="' + l.log_id + '" style="font-size:11px; padding:2px 8px;">🔄</button>';
+            html += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-view-log" data-id="' + l.log_id + '">Xem</button> ';
+            html += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-resend-log" data-id="' + l.log_id + '">Gửi lại</button>';
             html += '</td>';
             html += '</tr>';
         });
@@ -577,12 +578,63 @@
     }
 
     /* ────────────────────────────────────────
+     * DATE RANGE SYNC → Recipients section
+     * ──────────────────────────────────────── */
+    function updateRecipientDateLabel() {
+        var dates = getDates();
+        if (!dates.date_from || !dates.date_to) return;
+        var from = formatDateVN(dates.date_from);
+        var to = formatDateVN(dates.date_to);
+        var label = (dates.date_from === dates.date_to) ? from : (from + ' → ' + to);
+        $('#tgs-rcpt-date-label').text(label);
+    }
+
+    function formatDateVN(ymd) {
+        var parts = ymd.split('-');
+        if (parts.length !== 3) return ymd;
+        return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+
+    $(document).on('change', '#tgs-email-date-from, #tgs-email-date-to', function () {
+        updateRecipientDateLabel();
+    });
+
+    /* ────────────────────────────────────────
+     * SEND INDIVIDUAL — Gửi riêng cho 1 người
+     * ──────────────────────────────────────── */
+    $(document).on('click', '.btn-send-individual', function () {
+        var $btn = $(this);
+        var recipientId = $btn.data('id');
+        var emailType = $btn.data('type');
+        var typeName = emailType === 'shop_report' ? 'Shop' : 'Kho';
+        var dates = getDates();
+
+        if (!confirm('Gửi báo cáo ' + typeName + ' riêng cho người này?\n(' + dates.date_from + ' → ' + dates.date_to + ')')) return;
+
+        setLoading($btn, true);
+        ajaxPost('tgs_email_send_individual', {
+            recipient_id: recipientId,
+            email_type: emailType,
+            date_from: dates.date_from,
+            date_to: dates.date_to
+        }, function (data) {
+            setLoading($btn, false);
+            showToast(data.message || 'Đã gửi!', 'success');
+            loadRecentLogs();
+        }, function (msg) {
+            setLoading($btn, false);
+            showToast(msg, 'error');
+        });
+    });
+
+    /* ────────────────────────────────────────
      * INIT
      * ──────────────────────────────────────── */
     $(document).ready(function () {
         // Dashboard page
         if ($('#tgs-recipients-list').length) {
             loadRecipients();
+            updateRecipientDateLabel();
         }
         if ($('#tgs-email-recent-logs').length) {
             loadRecentLogs();

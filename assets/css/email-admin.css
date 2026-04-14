@@ -1,13 +1,328 @@
 /* TGS Email Report — Admin CSS */
 
-.tgs-email-dashboard .tgs-email-card {
-    transition: box-shadow 0.2s ease;
+/* ══════════════ Layout ══════════════ */
+.tgs-er-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
 }
-.tgs-email-dashboard .tgs-email-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+.tgs-er-title {
+    margin: 0;
+    font-size: 22px;
+    color: #1e3a5f;
+    font-weight: 700;
+}
+.tgs-er-subtitle {
+    margin: 4px 0 0;
+    color: #6c757d;
+    font-size: 13px;
+}
+.tgs-er-header-actions {
+    display: flex;
+    gap: 8px;
 }
 
-/* Loading state */
+/* ══════════════ Cards ══════════════ */
+.tgs-er-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    margin-bottom: 20px;
+    transition: box-shadow 0.2s ease;
+}
+.tgs-er-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+.tgs-er-card-title {
+    margin: 0 0 16px;
+    font-size: 15px;
+    color: #1e3a5f;
+    font-weight: 600;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+.tgs-er-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* ══════════════ Buttons ══════════════ */
+.tgs-er-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 16px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    text-decoration: none;
+    line-height: 1.4;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.tgs-er-btn:hover {
+    opacity: 0.9;
+    text-decoration: none;
+}
+.tgs-er-btn-primary {
+    background: #2d5f8a;
+    color: #fff;
+    border-color: #1e3a5f;
+}
+.tgs-er-btn-primary:hover {
+    background: #1e3a5f;
+    color: #fff;
+}
+.tgs-er-btn-teal {
+    background: #17a2b8;
+    color: #fff;
+    border-color: #138496;
+}
+.tgs-er-btn-teal:hover {
+    background: #138496;
+    color: #fff;
+}
+.tgs-er-btn-success {
+    background: #28a745;
+    color: #fff;
+    border-color: #218838;
+}
+.tgs-er-btn-success:hover {
+    background: #218838;
+    color: #fff;
+}
+.tgs-er-btn-outline {
+    background: #f8fafc;
+    color: #1e3a5f;
+    border-color: #c8d6e5;
+}
+.tgs-er-btn-outline:hover {
+    background: #e8eef5;
+    color: #1e3a5f;
+}
+.tgs-er-btn-danger {
+    background: #fff;
+    color: #dc3545;
+    border-color: #f5c6cb;
+}
+.tgs-er-btn-danger:hover {
+    background: #f8d7da;
+}
+.tgs-er-btn-sm {
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ══════════════ Form Inputs ══════════════ */
+.tgs-er-label {
+    display: block;
+    font-size: 12px;
+    color: #5a6c7d;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+.tgs-er-input {
+    padding: 7px 10px;
+    border: 1px solid #c8d6e5;
+    border-radius: 5px;
+    font-size: 13px;
+    color: #2c3e50;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+}
+.tgs-er-input:focus {
+    border-color: #2d5f8a;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(45, 95, 138, 0.15);
+}
+
+/* ══════════════ Toggle Button with Tick ══════════════ */
+.tgs-er-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    border: 2px solid #c8d6e5;
+    background: #f0f2f5;
+    color: #8e99a4;
+}
+.tgs-er-toggle .tgs-er-tick {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 2px solid #b0b8c1;
+    background: #fff;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+.tgs-er-toggle .tgs-er-tick::after {
+    content: '';
+    display: none;
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 5px;
+    height: 9px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.tgs-er-toggle.active {
+    border-color: #2d5f8a;
+    background: #e8eef5;
+    color: #1e3a5f;
+}
+.tgs-er-toggle.active .tgs-er-tick {
+    background: #2d5f8a;
+    border-color: #2d5f8a;
+}
+.tgs-er-toggle.active .tgs-er-tick::after {
+    display: block;
+}
+.tgs-er-toggle:hover {
+    border-color: #8e99a4;
+}
+.tgs-er-toggle.active:hover {
+    border-color: #1e3a5f;
+    background: #dce5ef;
+}
+
+/* ══════════════ Tag (table cells) ══════════════ */
+.tgs-er-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.tgs-er-tag--on {
+    background: #d4edda;
+    color: #155724;
+}
+.tgs-er-tag--off {
+    background: #f0f2f5;
+    color: #adb5bd;
+}
+
+/* ══════════════ Add Form ══════════════ */
+.tgs-er-add-form {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid #e8eef5;
+}
+
+/* ══════════════ Date Badge ══════════════ */
+.tgs-er-date-badge {
+    background: #e8eef5;
+    color: #1e3a5f;
+    padding: 5px 14px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ══════════════ Status ══════════════ */
+.tgs-er-status {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.tgs-er-status--on {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+.tgs-er-status--on:hover {
+    background: #c3e6cb;
+}
+.tgs-er-status--off {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+.tgs-er-status--off:hover {
+    background: #ffeeba;
+}
+
+/* ══════════════ Link ══════════════ */
+.tgs-er-link {
+    font-size: 12px;
+    color: #2d5f8a;
+    text-decoration: none;
+    font-weight: 500;
+}
+.tgs-er-link:hover {
+    color: #1e3a5f;
+    text-decoration: underline;
+}
+
+/* ══════════════ Trigger Links ══════════════ */
+.tgs-er-trigger-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.tgs-er-trigger-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: center;
+}
+.tgs-er-trigger-badge--all  { background: #e8eef5; color: #1e3a5f; }
+.tgs-er-trigger-badge--shop { background: #dbeafe; color: #1e40af; }
+.tgs-er-trigger-badge--wh   { background: #d1fae5; color: #065f46; }
+.tgs-er-trigger-url {
+    flex: 1;
+    padding: 6px 10px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+/* ══════════════ Row Disabled ══════════════ */
+.tgs-er-row-disabled td {
+    opacity: 0.45;
+}
+.tgs-er-row-disabled td:nth-last-child(1),
+.tgs-er-row-disabled td:nth-last-child(2),
+.tgs-er-row-disabled td:nth-last-child(3) {
+    opacity: 1;
+}
+
+/* ══════════════ Loading state ══════════════ */
 .tgs-email-loading {
     position: relative;
     pointer-events: none;
@@ -30,7 +345,7 @@
     to { transform: rotate(360deg); }
 }
 
-/* Toast notification */
+/* ══════════════ Toast ══════════════ */
 .tgs-email-toast {
     position: fixed;
     top: 40px;
@@ -53,7 +368,7 @@
     to   { transform: translateX(0); opacity: 1; }
 }
 
-/* Recipients table */
+/* ══════════════ Tables ══════════════ */
 .tgs-rcpt-table {
     width: 100%;
     border-collapse: collapse;
@@ -62,21 +377,23 @@
 .tgs-rcpt-table th {
     background: #f0f4f8;
     color: #1e3a5f;
-    padding: 8px 10px;
+    padding: 10px 12px;
     text-align: left;
     font-weight: 600;
-    border-bottom: 2px solid #dee2e6;
+    border-bottom: 2px solid #d6e0eb;
+    font-size: 12px;
+    text-transform: none;
 }
 .tgs-rcpt-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eef2f7;
     vertical-align: middle;
+    color: #2c3e50;
 }
 .tgs-rcpt-table tr:hover td {
     background: #f8fafc;
 }
 
-/* Log table */
 .tgs-log-table {
     width: 100%;
     border-collapse: collapse;
@@ -85,21 +402,23 @@
 .tgs-log-table th {
     background: #f0f4f8;
     color: #1e3a5f;
-    padding: 8px 10px;
+    padding: 10px 12px;
     text-align: left;
     font-weight: 600;
-    border-bottom: 2px solid #dee2e6;
+    border-bottom: 2px solid #d6e0eb;
     white-space: nowrap;
+    font-size: 12px;
 }
 .tgs-log-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eef2f7;
+    color: #2c3e50;
 }
 .tgs-log-table tr:hover td {
     background: #f8fafc;
 }
 
-/* Badge */
+/* ══════════════ Badge ══════════════ */
 .tgs-badge {
     display: inline-block;
     padding: 2px 8px;
@@ -107,19 +426,22 @@
     font-size: 11px;
     font-weight: 600;
 }
-.tgs-badge-success { background: #d4edda; color: #155724; }
-.tgs-badge-danger  { background: #f8d7da; color: #721c24; }
-.tgs-badge-warning { background: #fff3cd; color: #856404; }
-.tgs-badge-info    { background: #d1ecf1; color: #0c5460; }
+.tgs-badge-success   { background: #d4edda; color: #155724; }
+.tgs-badge-danger    { background: #f8d7da; color: #721c24; }
+.tgs-badge-warning   { background: #fff3cd; color: #856404; }
+.tgs-badge-info      { background: #dbeafe; color: #1e40af; }
+.tgs-badge-primary   { background: #cce5ff; color: #004085; }
+.tgs-badge-secondary { background: #e9ecef; color: #495057; }
 
-/* Pagination */
+/* ══════════════ Pagination ══════════════ */
 .tgs-pagination-btn {
     padding: 4px 12px;
-    border: 1px solid #ccc;
+    border: 1px solid #c8d6e5;
     border-radius: 4px;
     background: #fff;
     cursor: pointer;
     font-size: 13px;
+    color: #2c3e50;
 }
 .tgs-pagination-btn.active {
     background: #2d5f8a;
@@ -127,16 +449,17 @@
     border-color: #2d5f8a;
 }
 .tgs-pagination-btn:hover {
-    background: #f0f4f8;
+    background: #e8eef5;
 }
 .tgs-pagination-btn.active:hover {
     background: #1e3a5f;
 }
 
-/* Button loading */
+/* ══════════════ Button loading ══════════════ */
 button.tgs-btn-loading {
     position: relative;
     color: transparent !important;
+    pointer-events: none;
 }
 button.tgs-btn-loading::after {
     content: '';
@@ -152,9 +475,11 @@ button.tgs-btn-loading::after {
     animation: tgs-spin 0.5s linear infinite;
 }
 
-/* Responsive */
+/* ══════════════ Responsive ══════════════ */
 @media screen and (max-width: 768px) {
-    .tgs-email-dashboard h2 { font-size: 18px !important; }
-    .tgs-email-card { padding: 14px 16px !important; }
+    .tgs-er-title { font-size: 18px !important; }
+    .tgs-er-card { padding: 14px 16px !important; }
     .tgs-rcpt-table, .tgs-log-table { font-size: 12px; }
+    .tgs-er-header { flex-direction: column; align-items: flex-start; }
+    .tgs-er-card-header { flex-direction: column; align-items: flex-start; }
 }
