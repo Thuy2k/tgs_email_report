@@ -77,25 +77,31 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
 
     <!-- ════════════════ TRIGGER LINKS ════════════════ -->
     <div class="tgs-er-card">
-        <h3 class="tgs-er-card-title">Liên kết gửi tự động</h3>
-        <p style="font-size:12px; color:#888; margin:0 0 12px;">Dùng các link này để gửi email tự động qua cron job hoặc ấn vào để gửi ngay.</p>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 class="tgs-er-card-title" style="margin:0; border:none; padding:0;">Cấu hình gửi tự động</h3>
+            <button id="btn-toggle-trigger" class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline" onclick="$('#tgs-trigger-content').slideToggle(200); var t=$(this); t.text(t.text()==='Hiển thị' ? 'Ẩn đi' : 'Hiển thị');">Hiển thị</button>
+        </div>
 
-        <div style="display:flex; flex-direction:column; gap:10px;">
-            <div class="tgs-er-trigger-row">
-                <span class="tgs-er-trigger-badge tgs-er-trigger-badge--all">Tất cả</span>
-                <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_all); ?></code>
-                <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_all); ?>">Copy</button>
-                <a href="<?php echo esc_url($trigger_url_all); ?>" target="_blank" class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline">Mở</a>
-            </div>
-            <div class="tgs-er-trigger-row">
-                <span class="tgs-er-trigger-badge tgs-er-trigger-badge--shop">Shop</span>
-                <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_shop); ?></code>
-                <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_shop); ?>">Copy</button>
-            </div>
-            <div class="tgs-er-trigger-row">
-                <span class="tgs-er-trigger-badge tgs-er-trigger-badge--wh">Kho</span>
-                <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_wh); ?></code>
-                <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_wh); ?>">Copy</button>
+        <div id="tgs-trigger-content" style="display:none; margin-top:16px;">
+            <p style="font-size:12px; color:#888; margin:0 0 12px;">Dùng các link này để gửi email tự động qua cron job hoặc ấn vào để gửi ngay.</p>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div class="tgs-er-trigger-row">
+                    <span class="tgs-er-trigger-badge tgs-er-trigger-badge--all">Tất cả</span>
+                    <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_all); ?></code>
+                    <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_all); ?>">Copy</button>
+                    <a href="<?php echo esc_url($trigger_url_all); ?>" target="_blank" class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline">Mở</a>
+                </div>
+                <div class="tgs-er-trigger-row">
+                    <span class="tgs-er-trigger-badge tgs-er-trigger-badge--shop">Shop</span>
+                    <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_shop); ?></code>
+                    <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_shop); ?>">Copy</button>
+                </div>
+                <div class="tgs-er-trigger-row">
+                    <span class="tgs-er-trigger-badge tgs-er-trigger-badge--wh">Kho</span>
+                    <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_wh); ?></code>
+                    <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_wh); ?>">Copy</button>
+                </div>
             </div>
         </div>
     </div>
@@ -124,17 +130,15 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
                     <label class="tgs-er-label">Vai trò</label>
                     <input type="text" id="rcpt-role" placeholder="Leader KD" class="tgs-er-input" style="width:100%;">
                 </div>
-                <div style="min-width:200px;">
+                <div style="min-width:220px;">
                     <label class="tgs-er-label">Nhận báo cáo</label>
-                    <div style="display:flex; gap:14px; padding-top:4px;">
-                        <label class="tgs-er-checkbox-label">
-                            <input type="checkbox" id="rcpt-type-shop" value="shop_report" checked>
-                            <span>Báo cáo Shop</span>
-                        </label>
-                        <label class="tgs-er-checkbox-label">
-                            <input type="checkbox" id="rcpt-type-wh" value="warehouse_report" checked>
-                            <span>Báo cáo Kho</span>
-                        </label>
+                    <div style="display:flex; gap:12px; padding-top:4px;">
+                        <span id="rcpt-type-shop" class="tgs-er-toggle active" data-value="shop_report">
+                            <i class="tgs-er-tick"></i> Báo cáo Shop
+                        </span>
+                        <span id="rcpt-type-wh" class="tgs-er-toggle active" data-value="warehouse_report">
+                            <i class="tgs-er-tick"></i> Báo cáo Kho
+                        </span>
                     </div>
                 </div>
                 <button id="btn-add-recipient" class="tgs-er-btn tgs-er-btn-primary" style="height:36px;">+ Thêm</button>
