@@ -35,23 +35,29 @@ abstract class TGS_Collector_Base
         return $blogs ?: [];
     }
 
-    /* ── Helper: lấy tên shop từ tgs_dim_shop ── */
+    /* ── Helper: lấy tên shop từ wp_blogs + blogname (WordPress native) ── */
     protected static function get_shop_names()
     {
         global $wpdb;
-        $dim = $wpdb->base_prefix . 'tgs_dim_shop';
 
-        // Kiểm tra bảng tồn tại
-        if ($wpdb->get_var("SHOW TABLES LIKE '{$dim}'") !== $dim) {
-            return [];
-        }
+        $blogs = $wpdb->get_results(
+            "SELECT blog_id, domain, path
+             FROM {$wpdb->blogs}
+             WHERE archived = 0 AND deleted = 0 AND spam = 0
+             ORDER BY blog_id ASC"
+        );
 
-        $rows = $wpdb->get_results("SELECT blog_id, shop_code, shop_name FROM {$dim} WHERE status = 1");
+        if (!$blogs) return [];
+
         $map = [];
-        foreach ($rows as $r) {
-            $map[$r->blog_id] = [
-                'code' => $r->shop_code,
-                'name' => $r->shop_name,
+        foreach ($blogs as $b) {
+            $prefix = $wpdb->get_blog_prefix($b->blog_id);
+            $name = $wpdb->get_var(
+                "SELECT option_value FROM {$prefix}options WHERE option_name = 'blogname' LIMIT 1"
+            );
+            $map[$b->blog_id] = [
+                'code' => 'SHOP-' . $b->blog_id,
+                'name' => $name ?: $b->domain,
             ];
         }
         return $map;
