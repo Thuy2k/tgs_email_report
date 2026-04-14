@@ -147,24 +147,23 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
             $result['summary']['total_above_max'] = count($above);
         }
 
-        // ── 3) Hết hàng (closing_qty = 0, có cấu hình active) ──
-        if ($has_config && $has_inv) {
+        // ── 3) Hết hàng (stockout_flag = 1 — không phụ thuộc config) ──
+        if ($has_inv) {
             $oos = $wpdb->get_results(
                 "SELECT
                     inv.blog_id, inv.sku,
                     COALESCE(p.product_name, inv.sku) as product_name,
                     SUM(inv.closing_qty) as closing_qty,
-                    cfg.min_qty
+                    COALESCE(cfg.min_qty, 0) as min_qty
                  FROM {$inv_table} inv
                  {$latest_join}
-                 INNER JOIN {$config_table} cfg
-                    ON inv.blog_id = cfg.blog_id AND inv.sku = cfg.product_sku
+                 LEFT JOIN {$config_table} cfg
+                    ON inv.blog_id = cfg.blog_id AND inv.sku = cfg.product_sku AND cfg.is_active = 1
                  {$prod_join}
-                 WHERE cfg.is_active = 1
+                 WHERE inv.stockout_flag = 1
                  GROUP BY inv.blog_id, inv.sku, p.product_name, cfg.min_qty
-                 HAVING closing_qty <= 0
                  ORDER BY inv.blog_id, inv.sku
-                 LIMIT 300"
+                 LIMIT 500"
             );
 
             foreach ($oos as $r) {

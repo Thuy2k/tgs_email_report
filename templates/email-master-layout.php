@@ -100,15 +100,16 @@ if (!defined('ABSPATH')) exit;
                             <?php
                             $df = $date_from ?? '';
                             $dt = $date_to ?? '';
+                            $same_day = ($df && $dt && $df === $dt);
                             if ($df && $dt) {
-                                if ($df === $dt) {
+                                if ($same_day) {
                                     echo 'Ngày ' . date('d/m/Y', strtotime($df));
                                 } else {
                                     echo 'Từ ' . date('d/m/Y', strtotime($df)) . ' → ' . date('d/m/Y', strtotime($dt));
                                 }
                             }
                             ?>
-                            &nbsp;|&nbsp; Gửi lúc <?php echo current_time('H:i d/m/Y'); ?>
+                            &nbsp;|&nbsp; Gửi lúc <?php echo current_time($same_day ? 'H:i' : 'H:i d/m/Y'); ?>
                         </div>
                     </div>
 
