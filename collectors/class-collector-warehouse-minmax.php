@@ -142,7 +142,6 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                     ON inv.blog_id = cfg.blog_id AND inv.sku = cfg.product_sku
                  {$prod_join}
                  WHERE cfg.is_active = 1
-                   AND cfg.site_type = 1
                    AND cfg.max_qty > 0
                  GROUP BY inv.blog_id, inv.sku, p.product_name, cfg.max_qty
                  HAVING closing_qty > cfg.max_qty
