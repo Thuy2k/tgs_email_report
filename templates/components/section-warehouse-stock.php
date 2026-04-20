@@ -49,8 +49,8 @@ $total_closing_value = max((float) ($t['closing_value'] ?? 1), 1);
                         <div style="font-size:11px; color:#77889a; margin-top:4px;"><?php echo (int) $s['total_skus']; ?> SKU<?php if (($s['stockout_count'] ?? 0) > 0): ?> · <span style="color:#cf3d32; font-weight:600;"><?php echo (int) $s['stockout_count']; ?> hết hàng</span><?php endif; ?></div>
                     </td>
                     <td align="right" style="vertical-align:top; white-space:nowrap;">
-                        <div style="font-size:12px; color:#75879a;"><?php echo number_format($share, 1, ',', '.'); ?>%</div>
-                        <div style="font-size:16px; font-weight:700; color:#13273e; margin-top:3px;"><?php echo $fmt($s['closing_value']); ?>₫</div>
+                        <div style="font-size:12px; color:#75879a;"><?php echo number_format($share, 1, ',', '.'); ?>% tổng giá trị</div>
+                        <div style="font-size:14px; font-weight:700; color:#13273e; margin-top:4px;"><span style="font-size:11px; color:#77889a; font-weight:400;">Tồn cuối: </span><?php echo $fmt($s['closing_value']); ?>₫</div>
                     </td>
                 </tr>
             </table>
