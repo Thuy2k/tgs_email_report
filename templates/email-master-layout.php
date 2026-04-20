@@ -14,6 +14,8 @@ if (!defined('ABSPATH')) exit;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title><?php echo esc_html($subject ?? 'TGS Email Report'); ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style type="text/css">
         /* Reset */
         body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
@@ -22,7 +24,7 @@ if (!defined('ABSPATH')) exit;
         body { margin: 0; padding: 0; width: 100% !important; height: 100% !important; background-color: #f4f6f9; }
 
         /* Main */
-        .email-wrapper { width: 100%; max-width: 800px; margin: 0 auto; background: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .email-wrapper { width: 100%; max-width: 800px; margin: 0 auto; background: #ffffff; font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .email-header { background: linear-gradient(135deg, #1e3a5f 0%, #2d5f8a 100%); color: #ffffff; padding: 24px 30px; }
         .email-header h1 { margin: 0; font-size: 22px; font-weight: 600; }
         .email-header .sub { color: #b0d0f0; font-size: 13px; margin-top: 6px; }

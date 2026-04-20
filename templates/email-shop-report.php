@@ -39,7 +39,7 @@ if ($change_pct > 0) {
 ob_start();
 ?>
 
-<div style="font-family:'Trebuchet MS', 'Segoe UI', Tahoma, sans-serif; color:#1c2d40;">
+<div style="font-family:'Inter', 'Segoe UI', Tahoma, sans-serif; color:#1c2d40;">
      <div style="margin-bottom:20px; background:linear-gradient(180deg, #ffffff 0%, #f5f9fc 100%); border:1px solid #dbe6f1; border-radius:28px; padding:18px 18px 20px; box-shadow:0 18px 34px rgba(18, 43, 74, 0.08);">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                <tr>
