@@ -10,6 +10,7 @@ $by_shop  = $minmax['by_shop'] ?? [];
 $shell    = 'margin-bottom:20px; background:#ffffff; border:1px solid #e3ebf3; border-radius:26px; padding:18px; box-shadow:0 14px 32px rgba(20, 46, 79, 0.07);';
 $th_style = 'padding:8px 10px; font-size:11px; color:#6480a0; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid #e6edf4;';
 $td_style = 'padding:8px 10px; border-bottom:1px solid #f0f4f8; font-size:12px;';
+$EMAIL_ITEM_LIMIT = 15; // Giới hạn items/bảng để tránh Gmail clipping (102KB)
 $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + ($sm['total_above_max'] ?? 0);
 ?>
 <div class="section" style="<?php echo $shell; ?>">
@@ -56,7 +57,7 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
             $border_color = $s_stockout > 0 ? '#f4dfdc' : ($s_below > 0 ? '#f0e5c9' : '#dbe8f7');
             $bg_color     = $s_stockout > 0 ? '#fffbfa' : ($s_below > 0 ? '#fffdf8' : '#fafcff');
         ?>
-        <div style="margin-bottom:14px; border:1px solid <?php echo $border_color; ?>; border-radius:22px; padding:14px 15px; background:<?php echo $bg_color; ?>;">
+        <div data-shop="<?php echo (int)$bid; ?>" style="margin-bottom:14px; border:1px solid <?php echo $border_color; ?>; border-radius:22px; padding:14px 15px; background:<?php echo $bg_color; ?>;">
             <!-- Shop header -->
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
@@ -87,7 +88,11 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         <th style="<?php echo $th_style; ?> text-align:right;">Tồn</th>
                         <th style="<?php echo $th_style; ?> text-align:right;">MAX</th>
                     </tr>
-                    <?php foreach ($shop['stockout'] as $item): ?>
+                    <?php
+                    $oos_list = $shop['stockout'];
+                    $oos_more = max(0, count($oos_list) - $EMAIL_ITEM_LIMIT);
+                    $oos_list = array_slice($oos_list, 0, $EMAIL_ITEM_LIMIT);
+                    foreach ($oos_list as $item): ?>
                     <tr>
                         <td style="<?php echo $td_style; ?>">
                             <div style="font-weight:600; color:#13273e;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></div>
@@ -99,11 +104,14 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         <td style="<?php echo $td_style; ?> text-align:right; color:#77889a;"><?php echo $fmt($item['max_qty'] ?? 0); ?></td>
                     </tr>
                     <?php endforeach; ?>
+                    <?php if ($oos_more > 0): ?>
+                    <tr><td colspan="3" style="padding:6px 10px; font-size:11px; color:#77889a; text-align:center;">... và <?php echo $oos_more; ?> sản phẩm khác</td></tr>
+                    <?php endif; ?>
                 </table>
             </div>
             <?php endif; ?>
 
-            <?php /* ── Dưới MIN ── */ ?>
+            <?php /* ── Dưới MIN ── */?>
             <?php if ($s_below > 0): ?>
             <div style="margin-top:12px;">
                 <div style="font-size:12px; font-weight:700; color:#b8860b; margin-bottom:6px;">Dưới MIN</div>
@@ -116,7 +124,11 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         <th style="<?php echo $th_style; ?> text-align:right;">Gợi ý mua</th>
                         <th style="<?php echo $th_style; ?> text-align:right;">Thiếu</th>
                     </tr>
-                    <?php foreach ($shop['below_min'] as $item): ?>
+                    <?php
+                    $below_list = $shop['below_min'];
+                    $below_more = max(0, count($below_list) - $EMAIL_ITEM_LIMIT);
+                    $below_list = array_slice($below_list, 0, $EMAIL_ITEM_LIMIT);
+                    foreach ($below_list as $item): ?>
                     <tr>
                         <td style="<?php echo $td_style; ?>">
                             <div style="font-weight:600; color:#13273e;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></div>
@@ -138,11 +150,14 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         </td>
                     </tr>
                     <?php endforeach; ?>
+                    <?php if ($below_more > 0): ?>
+                    <tr><td colspan="6" style="padding:6px 10px; font-size:11px; color:#77889a; text-align:center;">... và <?php echo $below_more; ?> sản phẩm khác</td></tr>
+                    <?php endif; ?>
                 </table>
             </div>
             <?php endif; ?>
 
-            <?php /* ── Vượt MAX ── */ ?>
+            <?php /* ── Vượt MAX ── */?>
             <?php if ($s_above > 0): ?>
             <div style="margin-top:12px;">
                 <div style="font-size:12px; font-weight:700; color:#2d5f8a; margin-bottom:6px;">Vượt MAX</div>
@@ -153,7 +168,11 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         <th style="<?php echo $th_style; ?> text-align:right;">MAX</th>
                         <th style="<?php echo $th_style; ?> text-align:right;">Dư</th>
                     </tr>
-                    <?php foreach ($shop['above_max'] as $item): ?>
+                    <?php
+                    $above_list = $shop['above_max'];
+                    $above_more = max(0, count($above_list) - $EMAIL_ITEM_LIMIT);
+                    $above_list = array_slice($above_list, 0, $EMAIL_ITEM_LIMIT);
+                    foreach ($above_list as $item): ?>
                     <tr>
                         <td style="<?php echo $td_style; ?>">
                             <div style="font-weight:600; color:#13273e;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></div>
@@ -166,6 +185,9 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         </td>
                     </tr>
                     <?php endforeach; ?>
+                    <?php if ($above_more > 0): ?>
+                    <tr><td colspan="4" style="padding:6px 10px; font-size:11px; color:#77889a; text-align:center;">... và <?php echo $above_more; ?> sản phẩm khác</td></tr>
+                    <?php endif; ?>
                 </table>
             </div>
             <?php endif; ?>

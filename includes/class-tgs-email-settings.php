@@ -27,6 +27,8 @@ class TGS_Email_Settings
         'resend_api_key' => '',       // encrypted khi lưu
         'from_email'  => '',
         'from_name'   => 'TGS System',
+        'shop_report_include_blogs'      => [],
+        'warehouse_report_include_blogs' => [],
     ];
 
     /** Hook vào WordPress */
@@ -254,6 +256,9 @@ class TGS_Email_Settings
             $old = $old ?? get_site_option(self::OPTION_KEY, []);
             $clean['resend_api_key'] = $old['resend_api_key'] ?? '';
         }
+
+        $clean['shop_report_include_blogs']      = array_values(array_map('intval', array_filter((array) ($data['shop_report_include_blogs'] ?? []))));
+        $clean['warehouse_report_include_blogs'] = array_values(array_map('intval', array_filter((array) ($data['warehouse_report_include_blogs'] ?? []))));
 
         update_site_option(self::OPTION_KEY, $clean);
         return $clean;

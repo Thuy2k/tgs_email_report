@@ -51,6 +51,7 @@ class TGS_Collector_Warehouse_Stock extends TGS_Collector_Base
 
         $latest_join  = self::inventory_latest_join($inv_table, $date_to);
         $opening_join = self::inventory_latest_join($inv_table, $date_from);
+        $blog_sql     = self::blog_filter_sql();
 
         $rows = $wpdb->get_results($wpdb->prepare(
             "SELECT
@@ -74,6 +75,7 @@ class TGS_Collector_Warehouse_Stock extends TGS_Collector_Base
              FROM (
                 SELECT DISTINCT blog_id
                 FROM {$inv_table}
+                WHERE 1=1 {$blog_sql}
              ) ids
              LEFT JOIN (
                 SELECT

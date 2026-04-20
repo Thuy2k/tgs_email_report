@@ -18,6 +18,10 @@ class TGS_Email_Sender
      * ================================================================ */
     public static function send_shop_report($date_from, $date_to, $triggered_by = 'manual', $user_id = 0, $override_recipients = null)
     {
+        // ── Áp dụng filter shop ──
+        $settings = TGS_Email_Settings::get();
+        TGS_Collector_Base::set_blog_filter($settings['shop_report_include_blogs'] ?? []);
+
         // ── Collect data từ các collector ──
         $sales_data     = TGS_Collector_Shop_Sales::collect($date_from, $date_to);
         $bank_data      = TGS_Collector_Shop_Bank::collect($date_from, $date_to);
@@ -56,6 +60,10 @@ class TGS_Email_Sender
      * ================================================================ */
     public static function send_warehouse_report($date_from, $date_to, $triggered_by = 'manual', $user_id = 0, $override_recipients = null)
     {
+        // ── Áp dụng filter shop ──
+        $settings = TGS_Email_Settings::get();
+        TGS_Collector_Base::set_blog_filter($settings['warehouse_report_include_blogs'] ?? []);
+
         // ── Collect data từ các collector ──
         $minmax_data = TGS_Collector_Warehouse_MinMax::collect($date_from, $date_to);
         $stock_data  = TGS_Collector_Warehouse_Stock::collect($date_from, $date_to);

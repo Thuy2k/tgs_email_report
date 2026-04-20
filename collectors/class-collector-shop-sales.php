@@ -33,6 +33,7 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
         $has_rollup = ($wpdb->get_var("SHOW TABLES LIKE '{$fact_table}'") === $fact_table);
 
         if ($has_rollup) {
+            $blog_sql = self::blog_filter_sql();
             $rows = $wpdb->get_results($wpdb->prepare(
                 "SELECT blog_id,
                         SUM(order_count) as order_count,
@@ -50,6 +51,7 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
                         AVG(avg_items_per_order) as avg_items_per_order
                  FROM {$fact_table}
                  WHERE rollup_date BETWEEN %s AND %s
+                   {$blog_sql}
                  GROUP BY blog_id
                  ORDER BY gross_revenue DESC",
                 $date_from, $date_to

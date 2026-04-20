@@ -10,21 +10,41 @@ if (!defined('ABSPATH')) exit;
 
 abstract class TGS_Collector_Base
 {
-    /**
-     * Thu thập dữ liệu — return mảng kết quả
-     *
-     * @param string $date_from  Y-m-d
-     * @param string $date_to    Y-m-d
-     * @return array
-     */
     abstract public static function collect($date_from, $date_to);
 
-    /* ── Helper: lấy danh sách blog_id active ── */
+    /** Blog ID filter — empty = tất cả shop */
+    protected static $blog_id_filter = [];
+
+    public static function set_blog_filter(array $blog_ids)
+    {
+        // Lưu vào global để tất cả child class dùng chung (tránh lỗi static inheritance)
+        $GLOBALS['_tgs_blog_id_filter'] = array_values(array_unique(array_map('intval', array_filter($blog_ids))));
+        self::$blog_id_filter = $GLOBALS['_tgs_blog_id_filter'];
+    }
+
+    public static function get_blog_filter()
+    {
+        return $GLOBALS['_tgs_blog_id_filter'] ?? [];
+    }
+
+    /**
+     * Trả về SQL snippet " AND {col} IN (1,2,3)" khi có filter, chuỗi rỗng nếu không.
+     * @param string $alias Alias bảng (vd: 'inv'). Để trống nếu không cần prefix.
+     */
+    public static function blog_filter_sql(string $alias = ''): string
+    {
+        $filter = $GLOBALS['_tgs_blog_id_filter'] ?? [];
+        if (empty($filter)) return '';
+        $col = $alias ? "{$alias}.blog_id" : 'blog_id';
+        $ids = implode(',', $filter);
+        return " AND {$col} IN ({$ids})";
+    }
+
+    /* ── Helper: lấy danh sách blog_id active (đã áp dụng filter) ── */
     protected static function get_active_blog_ids()
     {
         global $wpdb;
 
-        // Chỉ lấy các site public & not archived & not deleted
         $blogs = $wpdb->get_results(
             "SELECT blog_id, domain, path
              FROM {$wpdb->blogs}
@@ -32,7 +52,14 @@ abstract class TGS_Collector_Base
              ORDER BY blog_id ASC"
         );
 
-        return $blogs ?: [];
+        $blogs = $blogs ?: [];
+
+        $filter = $GLOBALS['_tgs_blog_id_filter'] ?? [];
+        if (!empty($filter)) {
+            $blogs = array_values(array_filter($blogs, fn($b) => in_array((int) $b->blog_id, $filter, true)));
+        }
+
+        return $blogs;
     }
 
     /* ── Helper: lấy tên shop theo tiêu đề site WP + mã shop từ tgs_dim_shop ── */

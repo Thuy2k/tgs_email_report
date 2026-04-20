@@ -70,6 +70,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
             $date_from_speed = date('Y-m-d', strtotime($date_to . ' -30 days'));
             $safe_from_speed = esc_sql($date_from_speed);
             $safe_to         = esc_sql($date_to);
+            $blog_sql        = self::blog_filter_sql('inv');
 
             $below = $wpdb->get_results(
                 "SELECT
@@ -97,6 +98,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                  WHERE cfg.is_active = 1
                    AND cfg.site_type = 1
                    AND cfg.min_qty > 0
+                   {$blog_sql}
                  GROUP BY inv.blog_id, inv.sku, p.product_name, cfg.min_qty, cfg.max_qty, spd.total_out, spd.period_days
                  HAVING closing_qty < cfg.min_qty AND closing_qty > 0
                  ORDER BY shortage DESC
@@ -129,6 +131,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
 
         // ── 2) Vượt MAX ──
         if ($has_config && $has_inv) {
+            $blog_sql_above = self::blog_filter_sql('inv');
             $above = $wpdb->get_results(
                 "SELECT
                     inv.blog_id, inv.sku,
@@ -143,6 +146,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                  {$prod_join}
                  WHERE cfg.is_active = 1
                    AND cfg.max_qty > 0
+                   {$blog_sql_above}
                  GROUP BY inv.blog_id, inv.sku, p.product_name, cfg.max_qty
                  HAVING closing_qty > cfg.max_qty
                  ORDER BY surplus DESC
@@ -170,6 +174,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
 
         // ── 3) Hết hàng (stockout_flag = 1 — không phụ thuộc config) ──
         if ($has_inv) {
+            $blog_sql_oos = self::blog_filter_sql('inv');
             $oos = $wpdb->get_results(
                 "SELECT
                     inv.blog_id, inv.sku,
@@ -182,6 +187,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                     ON inv.blog_id = cfg.blog_id AND inv.sku = cfg.product_sku AND cfg.is_active = 1 AND cfg.site_type = 1
                  {$prod_join}
                  WHERE inv.stockout_flag = 1
+                   {$blog_sql_oos}
                  GROUP BY inv.blog_id, inv.sku, p.product_name, cfg.max_qty
                  ORDER BY inv.blog_id, inv.sku
                  LIMIT 500"

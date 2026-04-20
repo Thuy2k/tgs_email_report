@@ -41,7 +41,7 @@ $total_closing_value = max((float) ($t['closing_value'] ?? 1), 1);
             $share = round(((float) ($s['closing_value'] ?? 0) / $total_closing_value) * 100, 1);
             $bar_width = $share > 0 ? max(8, min(100, $share)) : 0;
         ?>
-        <div style="margin-bottom:12px; border:1px solid #e6edf4; border-radius:22px; padding:14px 15px; background:#fcfdff;">
+        <div data-shop="<?php echo (int)$bid; ?>" style="margin-bottom:12px; border:1px solid #e6edf4; border-radius:22px; padding:14px 15px; background:#fcfdff;">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                     <td style="vertical-align:top; padding-right:8px;">

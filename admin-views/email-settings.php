@@ -5,6 +5,24 @@
 if (!defined('ABSPATH')) exit;
 
 $settings = TGS_Email_Settings::get_for_display();
+
+// Lấy danh sách tất cả shops đang active
+global $wpdb;
+$all_blogs = $wpdb->get_results(
+    "SELECT blog_id, domain, path FROM {$wpdb->blogs}
+     WHERE archived = 0 AND deleted = 0 AND spam = 0
+     ORDER BY blog_id ASC"
+) ?: [];
+
+// Tên shop (dùng get_blog_details nếu có)
+$blog_names = [];
+foreach ($all_blogs as $b) {
+    $details = get_blog_details($b->blog_id);
+    $blog_names[$b->blog_id] = $details ? $details->blogname : 'Blog #' . $b->blog_id;
+}
+
+$shop_filter_blogs = (array) ($settings['shop_report_include_blogs'] ?? []);
+$wh_filter_blogs   = (array) ($settings['warehouse_report_include_blogs'] ?? []);
 ?>
 
 <div class="tgs-email-dashboard" style="max-width:800px; margin:0 auto;">
@@ -183,6 +201,52 @@ $settings = TGS_Email_Settings::get_for_display();
                 <input type="text" id="from_name" value="<?php echo esc_attr($settings['from_name']); ?>"
                        placeholder="TGS System"
                        style="width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════ LỌC SHOP ════════════════════════ -->
+    <div class="tgs-email-card" style="background:#fff; border-radius:8px; padding:20px 24px; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:20px;">
+        <h3 style="margin:0 0 16px; font-size:16px; color:#1e3a5f;">🏪 Lọc Shop Thống Kê</h3>
+        <p style="margin:0 0 16px; font-size:13px; color:#6c757d;">Chọn shop muốn đưa vào thống kê. Nếu không chọn = lấy <strong>tất cả</strong> shop.</p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+            <!-- Shop Report -->
+            <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <strong style="font-size:13px; color:#2d5f8a;">📊 Báo cáo Shop (Doanh thu)</strong>
+                    <button type="button" class="btn-toggle-all" data-group="shop" style="font-size:11px; padding:3px 8px; border:1px solid #2d5f8a; border-radius:4px; background:#f0f7ff; color:#2d5f8a; cursor:pointer;">Chọn tất cả</button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto; padding:8px; border:1px solid #e9ecef; border-radius:6px; background:#f8f9fa;">
+                    <?php foreach ($all_blogs as $b): ?>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; padding:4px 6px; border-radius:4px; transition:background .15s;" onmouseover="this.style.background='#e9f4ff'" onmouseout="this.style.background='transparent'">
+                        <input type="checkbox" class="shop-blog-cb" value="<?php echo (int)$b->blog_id; ?>"
+                               <?php checked(in_array((int)$b->blog_id, $shop_filter_blogs, true)); ?>
+                               style="width:16px; height:16px; appearance:checkbox !important; -webkit-appearance:checkbox !important; accent-color:#2d5f8a; cursor:pointer; flex-shrink:0;">
+                        <span><?php echo esc_html($blog_names[$b->blog_id]); ?></span>
+                        <span style="margin-left:auto; font-size:11px; color:#999;">#<?php echo (int)$b->blog_id; ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Warehouse Report -->
+            <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <strong style="font-size:13px; color:#5a2d82;">📦 Báo cáo Kho (Min/Max & Tồn)</strong>
+                    <button type="button" class="btn-toggle-all" data-group="wh" style="font-size:11px; padding:3px 8px; border:1px solid #5a2d82; border-radius:4px; background:#f8f0ff; color:#5a2d82; cursor:pointer;">Chọn tất cả</button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto; padding:8px; border:1px solid #e9ecef; border-radius:6px; background:#f8f9fa;">
+                    <?php foreach ($all_blogs as $b): ?>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; padding:4px 6px; border-radius:4px; transition:background .15s;" onmouseover="this.style.background='#f3e8ff'" onmouseout="this.style.background='transparent'">
+                        <input type="checkbox" class="wh-blog-cb" value="<?php echo (int)$b->blog_id; ?>"
+                               <?php checked(in_array((int)$b->blog_id, $wh_filter_blogs, true)); ?>
+                               style="width:16px; height:16px; appearance:checkbox !important; -webkit-appearance:checkbox !important; accent-color:#5a2d82; cursor:pointer; flex-shrink:0;">
+                        <span><?php echo esc_html($blog_names[$b->blog_id]); ?></span>
+                        <span style="margin-left:auto; font-size:11px; color:#999;">#<?php echo (int)$b->blog_id; ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </div>

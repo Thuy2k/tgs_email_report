@@ -185,8 +185,10 @@ class TGS_Email_Ajax
         list($date_from, $date_to) = self::parse_dates();
 
         $type = sanitize_text_field($_POST['email_type'] ?? 'shop_report');
+        $settings = TGS_Email_Settings::get();
 
         if ($type === TGS_EMAIL_TYPE_WAREHOUSE) {
+            TGS_Collector_Base::set_blog_filter($settings['warehouse_report_include_blogs'] ?? []);
             $minmax   = TGS_Collector_Warehouse_MinMax::collect($date_from, $date_to);
             $stock    = TGS_Collector_Warehouse_Stock::collect($date_from, $date_to);
             $summary  = TGS_Collector_Summary::collect($date_from, $date_to);
@@ -195,6 +197,7 @@ class TGS_Email_Ajax
                 'date_from' => $date_from, 'date_to' => $date_to,
             ]);
         } else {
+            TGS_Collector_Base::set_blog_filter($settings['shop_report_include_blogs'] ?? []);
             $sales   = TGS_Collector_Shop_Sales::collect($date_from, $date_to);
             $bank    = TGS_Collector_Shop_Bank::collect($date_from, $date_to);
             $max     = TGS_Collector_Shop_Max::collect($date_from, $date_to);
@@ -358,6 +361,8 @@ class TGS_Email_Ajax
             'resend_api_key'    => $_POST['resend_api_key'] ?? '',
             'from_email'        => sanitize_email($_POST['from_email'] ?? ''),
             'from_name'         => sanitize_text_field($_POST['from_name'] ?? 'TGS System'),
+            'shop_report_include_blogs'      => array_values(array_map('intval', array_filter((array) ($_POST['shop_report_include_blogs'] ?? [])))),
+            'warehouse_report_include_blogs' => array_values(array_map('intval', array_filter((array) ($_POST['warehouse_report_include_blogs'] ?? [])))),
         ];
         TGS_Email_Settings::save($data);
         wp_send_json_success(['message' => 'Đã lưu cài đặt!', 'settings' => TGS_Email_Settings::get_for_display()]);

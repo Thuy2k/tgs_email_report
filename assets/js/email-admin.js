@@ -47,12 +47,17 @@
         data = data || {};
         data.action = action;
         data.nonce = NONCE;
-        $.post(API, data, function (res) {
-            if (res.success) {
-                onSuccess && onSuccess(res.data);
-            } else {
-                var msg = (res.data && res.data.message) || 'Có lỗi xảy ra';
-                onError ? onError(msg) : showToast(msg, 'error');
+        $.ajax({
+            url: API,
+            type: 'POST',
+            data: data,
+            success: function (res) {
+                if (res.success) {
+                    onSuccess && onSuccess(res.data);
+                } else {
+                    var msg = (res.data && res.data.message) || 'Có lỗi xảy ra';
+                    onError ? onError(msg) : showToast(msg, 'error');
+                }
             }
         }).fail(function () {
             showToast('Lỗi kết nối server', 'error');
@@ -525,7 +530,9 @@
             smtp_no_verify_ssl: $('#smtp_no_verify_ssl').is(':checked') ? 1 : 0,
             resend_api_key: $('#resend_api_key').val(),
             from_email: $('#from_email').val(),
-            from_name: $('#from_name').val()
+            from_name: $('#from_name').val(),
+            shop_report_include_blogs: $('.shop-blog-cb:checked').map(function () { return parseInt(this.value, 10); }).get(),
+            warehouse_report_include_blogs: $('.wh-blog-cb:checked').map(function () { return parseInt(this.value, 10); }).get()
         };
 
         setLoading($btn, true);
@@ -537,6 +544,15 @@
             setLoading($btn, false);
             showToast(msg, 'error');
         });
+    });
+
+    // Toggle tất cả shop checkboxes
+    $(document).on('click', '.btn-toggle-all', function () {
+        var group   = $(this).data('group');
+        var $cbs    = group === 'shop' ? $('.shop-blog-cb') : $('.wh-blog-cb');
+        var allChecked = $cbs.length === $cbs.filter(':checked').length;
+        $cbs.prop('checked', !allChecked);
+        $(this).text(allChecked ? 'Chọn tất cả' : 'Bỏ chọn tất cả');
     });
 
     // Test SMTP
