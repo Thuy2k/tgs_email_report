@@ -180,7 +180,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                     inv.blog_id, inv.sku,
                     COALESCE(p.product_name, inv.sku) as product_name,
                     SUM(inv.closing_qty) as closing_qty,
-                    COALESCE(cfg.max_qty, 0) as max_qty
+                    cfg.max_qty
                  FROM {$inv_table} inv
                  {$latest_join}
                  LEFT JOIN {$config_table} cfg
@@ -201,7 +201,7 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
                     'sku'          => $r->sku,
                     'product_name' => $r->product_name,
                     'closing_qty'  => (float) $r->closing_qty,
-                    'max_qty'      => (float) $r->max_qty,
+                    'max_qty'      => $r->max_qty !== null ? (float) $r->max_qty : null,
                 ];
                 $result['stockout'][] = $item;
 

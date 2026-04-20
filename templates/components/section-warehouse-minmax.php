@@ -101,7 +101,7 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         <td style="<?php echo $td_style; ?> text-align:right;">
                             <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#fff1f0; color:#cf3d32;">0</span>
                         </td>
-                        <td style="<?php echo $td_style; ?> text-align:right; color:#77889a;"><?php echo $fmt($item['max_qty'] ?? 0); ?></td>
+                        <td style="<?php echo $td_style; ?> text-align:right; color:#77889a;"><?php echo $item['max_qty'] !== null ? $fmt($item['max_qty']) : '<span style="color:#bbb; font-size:10px;">Chưa cài</span>'; ?></td>
                     </tr>
                     <?php endforeach; ?>
                     <?php if ($oos_more > 0): ?>

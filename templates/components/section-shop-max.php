@@ -22,7 +22,7 @@ $shell_style = 'margin-bottom:20px; background:#ffffff; border:1px solid #e3ebf3
         </div>
 
         <?php foreach ($max as $blog_id => $shop): ?>
-        <div style="margin-bottom:14px; border:1px solid #e6edf4; border-radius:22px; padding:14px 15px; background:#fcfdff;">
+        <div data-shop="<?php echo (int)$blog_id; ?>" style="margin-bottom:14px; border:1px solid #e6edf4; border-radius:22px; padding:14px 15px; background:#fcfdff;">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:8px;">
                 <tr>
                     <td style="vertical-align:top; padding-right:8px;">
@@ -37,14 +37,16 @@ $shell_style = 'margin-bottom:20px; background:#ffffff; border:1px solid #e3ebf3
 
             <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12px; margin-top:4px;">
                 <tr>
+                    <th style="background:#f0f4f8; padding:6px 8px; text-align:left; border-bottom:1px solid #dee2e6;">Tên sản phẩm</th>
                     <th style="background:#f0f4f8; padding:6px 8px; text-align:left; border-bottom:1px solid #dee2e6;">SKU</th>
                     <th style="background:#f0f4f8; padding:6px 8px; text-align:right; border-bottom:1px solid #dee2e6;">Tồn Hiện Tại</th>
                     <th style="background:#f0f4f8; padding:6px 8px; text-align:right; border-bottom:1px solid #dee2e6;">MAX</th>
                     <th style="background:#f0f4f8; padding:6px 8px; text-align:right; border-bottom:1px solid #dee2e6;">Vượt</th>
                 </tr>
-                <?php foreach (array_slice($shop['items'], 0, 10) as $item): ?>
+                <?php foreach (array_slice($shop['items'], 0, 15) as $item): ?>
                 <tr>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><?php echo esc_html($item['sku']); ?></td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><?php echo esc_html($item['product_name'] ?: $item['sku']); ?></td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; color:#77889a; font-size:11px;"><?php echo esc_html($item['sku']); ?></td>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right;"><?php echo $item['closing_qty'] !== null ? $fmt($item['closing_qty']) : '—'; ?></td>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right;"><?php echo $fmt($item['max_qty']); ?></td>
                     <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:right; color:#dc3545; font-weight:600;">
@@ -52,9 +54,9 @@ $shell_style = 'margin-bottom:20px; background:#ffffff; border:1px solid #e3ebf3
                     </td>
                 </tr>
                 <?php endforeach; ?>
-                <?php if (count($shop['items']) > 10): ?>
+                <?php if (count($shop['items']) > 15): ?>
                 <tr>
-                    <td colspan="4" style="padding:6px 8px; color:#888; font-size:11px;">...và <?php echo count($shop['items']) - 10; ?> SP khác</td>
+                    <td colspan="5" style="padding:6px 8px; color:#888; font-size:11px; text-align:center;">... và <?php echo count($shop['items']) - 15; ?> sản phẩm khác</td>
                 </tr>
                 <?php endif; ?>
             </table>

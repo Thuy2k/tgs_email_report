@@ -36,17 +36,24 @@ class TGS_Collector_Shop_Max extends TGS_Collector_Base
         if ($has_inventory) {
             $latest_join = self::inventory_latest_join($inv_table, $date_to);
 
+            $dim_table = $wpdb->base_prefix . 'tgs_dim_product';
+            $has_dim   = ($wpdb->get_var("SHOW TABLES LIKE '{$dim_table}'") === $dim_table);
+            $dim_join  = $has_dim ? "LEFT JOIN {$dim_table} dim ON dim.sku = inv.sku" : '';
+            $dim_sel   = $has_dim ? 'dim.product_name,' : "'' as product_name,";
+
             // Join inventory closing qty (latest snapshot) với config max_qty
             $rows = $wpdb->get_results(
                 "SELECT
                     inv.blog_id,
                     inv.sku,
+                    {$dim_sel}
                     SUM(inv.closing_qty) as closing_qty,
                     cfg.max_qty,
                     cfg.min_qty,
                     (SUM(inv.closing_qty) - cfg.max_qty) as over_max
                  FROM {$inv_table} inv
                  {$latest_join}
+                 {$dim_join}
                  INNER JOIN {$config_table} cfg
                     ON inv.blog_id = cfg.blog_id AND inv.sku = cfg.product_sku
                  WHERE cfg.is_active = 1
@@ -69,10 +76,11 @@ class TGS_Collector_Shop_Max extends TGS_Collector_Base
                     ];
                 }
                 $result[$bid]['items'][] = [
-                    'sku'         => $r->sku,
-                    'closing_qty' => (float) $r->closing_qty,
-                    'max_qty'     => (float) $r->max_qty,
-                    'over_max'    => (float) $r->over_max,
+                    'sku'          => $r->sku,
+                    'product_name' => $r->product_name ?: '',
+                    'closing_qty'  => (float) $r->closing_qty,
+                    'max_qty'      => (float) $r->max_qty,
+                    'over_max'     => (float) $r->over_max,
                 ];
                 $result[$bid]['total_over_max_items']++;
             }
@@ -98,10 +106,11 @@ class TGS_Collector_Shop_Max extends TGS_Collector_Base
                     ];
                 }
                 $result[$bid]['items'][] = [
-                    'sku'         => $c->product_sku,
-                    'closing_qty' => null,
-                    'max_qty'     => (float) $c->max_qty,
-                    'over_max'    => null,
+                    'sku'          => $c->product_sku,
+                    'product_name' => '',
+                    'closing_qty'  => null,
+                    'max_qty'      => (float) $c->max_qty,
+                    'over_max'     => null,
                 ];
             }
         }
