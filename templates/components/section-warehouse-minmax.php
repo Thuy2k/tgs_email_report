@@ -85,9 +85,9 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                     <tr>
                         <th style="<?php echo $th_style; ?> text-align:left;">Sản phẩm</th>
                         <th style="<?php echo $th_style; ?> text-align:right;">Tồn</th>
-                        <th style="<?php echo $th_style; ?> text-align:right;">MIN</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">MAX</th>
                     </tr>
-                    <?php foreach (array_slice($shop['stockout'], 0, 15) as $item): ?>
+                    <?php foreach ($shop['stockout'] as $item): ?>
                     <tr>
                         <td style="<?php echo $td_style; ?>">
                             <div style="font-weight:600; color:#13273e;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></div>
@@ -96,12 +96,9 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         <td style="<?php echo $td_style; ?> text-align:right;">
                             <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#fff1f0; color:#cf3d32;">0</span>
                         </td>
-                        <td style="<?php echo $td_style; ?> text-align:right; color:#77889a;"><?php echo $fmt($item['min_qty']); ?></td>
+                        <td style="<?php echo $td_style; ?> text-align:right; color:#77889a;"><?php echo $fmt($item['max_qty'] ?? 0); ?></td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if ($s_stockout > 15): ?>
-                    <tr><td colspan="3" style="padding:6px 10px; color:#77889a; font-size:11px;">...và <?php echo $s_stockout - 15; ?> mục khác</td></tr>
-                    <?php endif; ?>
                 </table>
             </div>
             <?php endif; ?>
@@ -115,9 +112,11 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         <th style="<?php echo $th_style; ?> text-align:left;">Sản phẩm</th>
                         <th style="<?php echo $th_style; ?> text-align:right;">Tồn</th>
                         <th style="<?php echo $th_style; ?> text-align:right;">MIN</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">Tốc độ bán</th>
+                        <th style="<?php echo $th_style; ?> text-align:right;">Gợi ý mua</th>
                         <th style="<?php echo $th_style; ?> text-align:right;">Thiếu</th>
                     </tr>
-                    <?php foreach (array_slice($shop['below_min'], 0, 15) as $item): ?>
+                    <?php foreach ($shop['below_min'] as $item): ?>
                     <tr>
                         <td style="<?php echo $td_style; ?>">
                             <div style="font-weight:600; color:#13273e;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></div>
@@ -125,14 +124,20 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         </td>
                         <td style="<?php echo $td_style; ?> text-align:right; color:#b8860b; font-weight:600;"><?php echo $fmt($item['closing_qty']); ?></td>
                         <td style="<?php echo $td_style; ?> text-align:right; color:#77889a;"><?php echo $fmt($item['min_qty']); ?></td>
+                        <td style="<?php echo $td_style; ?> text-align:right; color:#555;">
+                            <?php $spd = $item['sell_speed'] ?? 0; echo $spd > 0 ? number_format($spd, 2) . '/ngày' : '<span style="color:#bbb;">—</span>'; ?>
+                        </td>
+                        <td style="<?php echo $td_style; ?> text-align:right;">
+                            <?php $sg = $item['suggest_buy'] ?? 0; ?>
+                            <?php if ($sg > 0): ?>
+                            <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#e8f5e9; color:#1b5e20;">+<?php echo $fmt($sg); ?></span>
+                            <?php else: echo '<span style="color:#bbb;">—</span>'; endif; ?>
+                        </td>
                         <td style="<?php echo $td_style; ?> text-align:right;">
                             <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#fffcf5; color:#b8860b;"><?php echo $fmt($item['shortage']); ?></span>
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if ($s_below > 15): ?>
-                    <tr><td colspan="4" style="padding:6px 10px; color:#77889a; font-size:11px;">...và <?php echo $s_below - 15; ?> mục khác</td></tr>
-                    <?php endif; ?>
                 </table>
             </div>
             <?php endif; ?>
@@ -148,7 +153,7 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         <th style="<?php echo $th_style; ?> text-align:right;">MAX</th>
                         <th style="<?php echo $th_style; ?> text-align:right;">Dư</th>
                     </tr>
-                    <?php foreach (array_slice($shop['above_max'], 0, 15) as $item): ?>
+                    <?php foreach ($shop['above_max'] as $item): ?>
                     <tr>
                         <td style="<?php echo $td_style; ?>">
                             <div style="font-weight:600; color:#13273e;"><?php echo esc_html($item['product_name'] ?? $item['sku']); ?></div>
@@ -161,9 +166,6 @@ $total_issues = ($sm['total_stockout'] ?? 0) + ($sm['total_below_min'] ?? 0) + (
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if ($s_above > 15): ?>
-                    <tr><td colspan="4" style="padding:6px 10px; color:#77889a; font-size:11px;">...và <?php echo $s_above - 15; ?> mục khác</td></tr>
-                    <?php endif; ?>
                 </table>
             </div>
             <?php endif; ?>

@@ -28,15 +28,11 @@ $shell = 'margin-bottom:20px; background:#ffffff; border:1px solid #e3ebf3; bord
         </table>
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:14px;">
             <tr>
-                <td width="33.33%" style="padding-right:8px; vertical-align:top;">
-                    <div style="font-size:11px; color:#6d8198; text-transform:uppercase; letter-spacing:0.8px;">Giá vốn bán</div>
-                    <div style="font-size:16px; font-weight:700; color:#17324f; margin-top:4px;"><?php echo $fmt($t['cogs_value'] ?? 0); ?>₫</div>
-                </td>
-                <td width="33.33%" style="padding:0 4px; vertical-align:top;">
+                <td width="50%" style="padding-right:8px; vertical-align:top;">
                     <div style="font-size:11px; color:#6d8198; text-transform:uppercase; letter-spacing:0.8px;">Tồn đầu kỳ</div>
                     <div style="font-size:16px; font-weight:700; color:#17324f; margin-top:4px;"><?php echo $fmt($t['opening_qty'] ?? 0); ?></div>
                 </td>
-                <td width="33.33%" style="padding-left:8px; vertical-align:top;">
+                <td width="50%" style="padding-left:8px; vertical-align:top;">
                     <div style="font-size:11px; color:#6d8198; text-transform:uppercase; letter-spacing:0.8px;">Tồn cuối kỳ</div>
                     <div style="font-size:16px; font-weight:700; color:#17324f; margin-top:4px;"><?php echo $fmt($t['closing_qty'] ?? 0); ?></div>
                 </td>
