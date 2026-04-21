@@ -27,12 +27,14 @@ class TGS_Email_Sender
         $bank_data      = TGS_Collector_Shop_Bank::collect($date_from, $date_to);
         $max_data       = TGS_Collector_Shop_Max::collect($date_from, $date_to);
         $summary_data   = TGS_Collector_Summary::collect($date_from, $date_to);
+        $gifts_data     = TGS_Collector_Shop_Gifts::collect($date_from, $date_to);
 
         $all_data = [
             'sales'   => $sales_data,
             'bank'    => $bank_data,
             'max'     => $max_data,
             'summary' => $summary_data,
+            'gifts'   => $gifts_data,
             'date_from' => $date_from,
             'date_to'   => $date_to,
         ];

@@ -21,6 +21,16 @@ $this_week_net_width = min(100, max(10, round(($this_week_net / $revenue_bar_bas
 $prev_week_net_width = min(100, max(10, round(($prev_week_net / $revenue_bar_base) * 100, 1)));
 $this_week_order_width = min(100, max(10, round(($this_week_orders / $order_bar_base) * 100, 1)));
 $prev_week_order_width = min(100, max(10, round(($prev_week_orders / $order_bar_base) * 100, 1)));
+$this_week_gift_qty   = (float) ($wc['this_week_gift_qty'] ?? 0);
+$prev_week_gift_qty   = (float) ($wc['prev_week_gift_qty'] ?? 0);
+$this_week_gift_value = (float) ($wc['this_week_gift_value'] ?? 0);
+$prev_week_gift_value = (float) ($wc['prev_week_gift_value'] ?? 0);
+$gift_qty_base = max($this_week_gift_qty, $prev_week_gift_qty, 1);
+$gift_value_base = max($this_week_gift_value, $prev_week_gift_value, 1);
+$this_week_gift_qty_width   = min(100, max(10, round(($this_week_gift_qty / $gift_qty_base) * 100, 1)));
+$prev_week_gift_qty_width   = min(100, max(10, round(($prev_week_gift_qty / $gift_qty_base) * 100, 1)));
+$this_week_gift_value_width = min(100, max(10, round(($this_week_gift_value / $gift_value_base) * 100, 1)));
+$prev_week_gift_value_width = min(100, max(10, round(($prev_week_gift_value / $gift_value_base) * 100, 1)));
 ?>
 <div class="section" style="<?php echo $shell_style; ?>">
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:12px;">
@@ -61,61 +71,45 @@ $prev_week_order_width = min(100, max(10, round(($prev_week_orders / $order_bar_
         </table>
 
         <div style="background:#fcfdff; border:1px solid #e5edf5; border-radius:20px; padding:16px;">
-            <div style="font-size:13px; font-weight:700; color:#13273e; margin-bottom:10px;">Chỉ số so sánh</div>
-
-            <div style="margin-bottom:12px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:5px;">
-                    <tr>
-                        <td style="font-size:13px; font-weight:700; color:#13273e;">Doanh thu tuần</td>
-                        <td align="right" style="font-size:12px; color:#718397;">Tuần này <?php echo $fmt($wc['this_week_net']); ?>đ</td>
-                    </tr>
-                </table>
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:6px; table-layout:fixed; border-collapse:separate;">
-                    <tr>
-                        <td width="<?php echo $this_week_net_width; ?>%" style="height:8px; background:#1f8f4d; border-radius:999px; font-size:0; line-height:0;">&nbsp;</td>
-                        <td width="<?php echo max(0, 100 - $this_week_net_width); ?>%" style="height:8px; background:#e7edf5; border-radius:999px; font-size:0; line-height:0;">&nbsp;</td>
-                    </tr>
-                </table>
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                    <tr>
-                        <td style="font-size:12px; color:#718397;">Tuần trước <?php echo $fmt($wc['prev_week_net']); ?>đ</td>
-                        <td align="right" style="font-size:12px; color:#718397;"><?php echo number_format(abs($change), 1, ',', '.'); ?>%</td>
-                    </tr>
-                </table>
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:6px; table-layout:fixed; border-collapse:separate;">
-                    <tr>
-                        <td width="<?php echo $prev_week_net_width; ?>%" style="height:8px; background:#c7d3df; border-radius:999px; font-size:0; line-height:0;">&nbsp;</td>
-                        <td width="<?php echo max(0, 100 - $prev_week_net_width); ?>%" style="height:8px; background:#eef2f6; border-radius:999px; font-size:0; line-height:0;">&nbsp;</td>
-                    </tr>
-                </table>
-            </div>
-
-            <div>
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:5px;">
-                    <tr>
-                        <td style="font-size:13px; font-weight:700; color:#13273e;">Số đơn</td>
-                        <td align="right" style="font-size:12px; color:#718397;">Tuần này <?php echo $fmt($wc['this_week_orders']); ?> đơn</td>
-                    </tr>
-                </table>
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:6px; table-layout:fixed; border-collapse:separate;">
-                    <tr>
-                        <td width="<?php echo $this_week_order_width; ?>%" style="height:8px; background:#2d5f8a; border-radius:999px; font-size:0; line-height:0;">&nbsp;</td>
-                        <td width="<?php echo max(0, 100 - $this_week_order_width); ?>%" style="height:8px; background:#e7edf5; border-radius:999px; font-size:0; line-height:0;">&nbsp;</td>
-                    </tr>
-                </table>
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                    <tr>
-                        <td style="font-size:12px; color:#718397;">Tuần trước <?php echo $fmt($wc['prev_week_orders']); ?> đơn</td>
-                        <td align="right" style="font-size:12px; color:#718397;">Lãi tuần này <?php echo $fmt($wc['this_week_profit']); ?>đ</td>
-                    </tr>
-                </table>
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:6px; table-layout:fixed; border-collapse:separate;">
-                    <tr>
-                        <td width="<?php echo $prev_week_order_width; ?>%" style="height:8px; background:#c7d3df; border-radius:999px; font-size:0; line-height:0;">&nbsp;</td>
-                        <td width="<?php echo max(0, 100 - $prev_week_order_width); ?>%" style="height:8px; background:#eef2f6; border-radius:999px; font-size:0; line-height:0;">&nbsp;</td>
-                    </tr>
-                </table>
-            </div>
+            <div style="font-size:13px; font-weight:700; color:#13273e; margin-bottom:10px;">Chỉ số so sánh theo shop</div>
+            <?php $wc_shops = $wc['by_shop'] ?? []; ?>
+            <?php if (empty($wc_shops)): ?>
+                <div style="font-size:12px; color:#718397;">Chưa có dữ liệu theo shop.</div>
+            <?php else: ?>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;">
+                <tr style="background:#f0f4f8;">
+                    <td style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Shop</td>
+                    <td align="right" style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Doanh thu</td>
+                    <td align="right" style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Số đơn</td>
+                    <td align="right" style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">SL quà</td>
+                    <td align="right" style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Giá trị quà</td>
+                </tr>
+                <?php $i = 0; foreach ($wc_shops as $bid => $s): ?>
+                <?php $row_bg = $i % 2 === 0 ? '#ffffff' : '#f9fbfd'; $i++; ?>
+                <tr style="background:<?php echo $row_bg; ?>; border-top:1px solid #eef2f6;">
+                    <td style="padding:8px 8px; vertical-align:top;">
+                        <div style="font-size:12px; font-weight:600; color:#13273e;"><?php echo esc_html($s['shop_name']); ?></div>
+                    </td>
+                    <td align="right" style="padding:8px 8px; vertical-align:top; white-space:nowrap;">
+                        <div style="font-size:13px; font-weight:700; color:#13273e;"><?php echo $fmt($s['this_week_net']); ?>đ</div>
+                        <div style="font-size:10px; color:#5a6e82; font-weight:600; margin-top:2px;">Tuần trước: <?php echo $fmt($s['prev_week_net']); ?>đ</div>
+                    </td>
+                    <td align="right" style="padding:8px 8px; font-size:12px; color:#13273e; font-weight:600; vertical-align:top; white-space:nowrap;">
+                        <?php echo $fmt($s['this_week_orders']); ?>
+                        <div style="font-size:10px; color:#5a6e82; font-weight:600; margin-top:2px;">Tuần trước: <?php echo $fmt($s['prev_week_orders']); ?></div>
+                    </td>
+                    <td align="right" style="padding:8px 8px; font-size:12px; color:#7c3aed; font-weight:600; vertical-align:top; white-space:nowrap;">
+                        <?php echo $fmt($s['this_week_gift_qty']); ?> sp
+                        <div style="font-size:10px; color:#5a6e82; font-weight:600; margin-top:2px;">Tuần trước: <?php echo $fmt($s['prev_week_gift_qty']); ?></div>
+                    </td>
+                    <td align="right" style="padding:8px 8px; font-size:12px; color:#7c3aed; font-weight:600; vertical-align:top; white-space:nowrap;">
+                        <?php echo $fmt($s['this_week_gift_value']); ?>đ
+                        <div style="font-size:10px; color:#5a6e82; font-weight:600; margin-top:2px;">Tuần trước: <?php echo $fmt($s['prev_week_gift_value']); ?>đ</div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 </div>

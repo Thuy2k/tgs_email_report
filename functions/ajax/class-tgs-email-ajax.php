@@ -202,8 +202,10 @@ class TGS_Email_Ajax
             $bank    = TGS_Collector_Shop_Bank::collect($date_from, $date_to);
             $max     = TGS_Collector_Shop_Max::collect($date_from, $date_to);
             $summary = TGS_Collector_Summary::collect($date_from, $date_to);
+            $gifts   = TGS_Collector_Shop_Gifts::collect($date_from, $date_to);
             $html = TGS_Email_Sender::render_template('email-shop-report.php', [
                 'sales' => $sales, 'bank' => $bank, 'max' => $max, 'summary' => $summary,
+                'gifts' => $gifts,
                 'date_from' => $date_from, 'date_to' => $date_to,
             ]);
         }

@@ -34,6 +34,7 @@ require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'collectors/class-collector-shop-max.
 require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'collectors/class-collector-warehouse-minmax.php';
 require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'collectors/class-collector-warehouse-stock.php';
 require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'collectors/class-collector-summary.php';
+require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'collectors/class-collector-shop-gifts.php';
 
 // Functions
 require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'functions/ajax/class-tgs-email-ajax.php';

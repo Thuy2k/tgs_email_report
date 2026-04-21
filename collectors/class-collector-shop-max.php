@@ -58,6 +58,7 @@ class TGS_Collector_Shop_Max extends TGS_Collector_Base
                     ON inv.blog_id = cfg.blog_id AND inv.sku = cfg.product_sku
                  WHERE cfg.is_active = 1
                    AND cfg.max_qty > 0
+                 " . self::blog_filter_sql('inv') . "
                  GROUP BY inv.blog_id, inv.sku, cfg.max_qty, cfg.min_qty
                  HAVING closing_qty > cfg.max_qty
                  ORDER BY over_max DESC
@@ -90,6 +91,7 @@ class TGS_Collector_Shop_Max extends TGS_Collector_Base
                 "SELECT blog_id, product_sku, max_qty, min_qty
                  FROM {$config_table}
                  WHERE is_active = 1 AND max_qty > 0
+                 " . self::blog_filter_sql() . "
                  ORDER BY blog_id, product_sku"
             );
 

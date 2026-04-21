@@ -2,7 +2,7 @@
 /**
  * Template: Email Shop Report
  *
- * Biến có sẵn: $sales, $bank, $max, $summary, $date_from, $date_to
+ * Biến có sẵn: $sales, $bank, $max, $summary, $gifts, $date_from, $date_to
  *
  * Gộp tất cả shop vào 1 email duy nhất
  */
@@ -109,12 +109,17 @@ ob_start();
 <?php include __DIR__ . '/components/section-sales.php'; ?>
 
 <!-- ════════════════════════════════════════════
-     SECTION 3: ĐỐI CHIẾU THU NGÂN HÀNG
+     SECTION 3: TẶNG KÈM
+     ════════════════════════════════════════════ -->
+<?php include __DIR__ . '/components/section-gifts.php'; ?>
+
+<!-- ════════════════════════════════════════════
+     SECTION 4: ĐỐI CHIẾU THU NGÂN HÀNG
      ════════════════════════════════════════════ -->
 <?php include __DIR__ . '/components/section-bank.php'; ?>
 
 <!-- ════════════════════════════════════════════
-     SECTION 4: MAX TỒN KHO TẠI SHOP
+     SECTION 5: MAX TỒN KHO TẠI SHOP
      ════════════════════════════════════════════ -->
 <?php include __DIR__ . '/components/section-shop-max.php'; ?>
 

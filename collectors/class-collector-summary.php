@@ -89,24 +89,55 @@ class TGS_Collector_Summary extends TGS_Collector_Base
         $prev_week_start = date('Y-m-d', strtotime('-7 days', strtotime($week_start)));
         $prev_week_end = date('Y-m-d', strtotime('-1 day', strtotime($week_start)));
 
-        $this_week_totals = self::aggregate_sales_totals(TGS_Collector_Shop_Sales::collect($week_start, $date_to));
-        $prev_week_totals = self::aggregate_sales_totals(TGS_Collector_Shop_Sales::collect($prev_week_start, $prev_week_end));
+        $tw_sales = TGS_Collector_Shop_Sales::collect($week_start, $date_to);
+        $pw_sales = TGS_Collector_Shop_Sales::collect($prev_week_start, $prev_week_end);
+        $this_week_totals = self::aggregate_sales_totals($tw_sales);
+        $prev_week_totals = self::aggregate_sales_totals($pw_sales);
+
+        $tw_gifts = TGS_Collector_Shop_Gifts::collect($week_start, $date_to);
+        $pw_gifts = TGS_Collector_Shop_Gifts::collect($prev_week_start, $prev_week_end);
+
+        // Per-shop merge
+        $all_blog_ids = array_unique(array_merge(array_keys($tw_sales), array_keys($pw_sales)));
+        $shop_names   = self::get_shop_names();
+        $by_shop = [];
+        foreach ($all_blog_ids as $bid) {
+            $tw = $tw_sales[$bid] ?? [];
+            $pw = $pw_sales[$bid] ?? [];
+            $info = $shop_names[$bid] ?? ['name' => 'Shop #' . $bid, 'code' => 'SHOP-' . $bid];
+            $by_shop[$bid] = [
+                'shop_name'          => $info['name'],
+                'this_week_net'      => (float) ($tw['net_revenue'] ?? 0),
+                'this_week_orders'   => (int)   ($tw['order_count'] ?? 0),
+                'this_week_gift_qty' => (float) ($tw_gifts['by_shop'][$bid]['gift_qty'] ?? 0),
+                'this_week_gift_value' => (float) ($tw_gifts['by_shop'][$bid]['gift_value'] ?? 0),
+                'prev_week_net'      => (float) ($pw['net_revenue'] ?? 0),
+                'prev_week_orders'   => (int)   ($pw['order_count'] ?? 0),
+                'prev_week_gift_qty' => (float) ($pw_gifts['by_shop'][$bid]['gift_qty'] ?? 0),
+                'prev_week_gift_value' => (float) ($pw_gifts['by_shop'][$bid]['gift_value'] ?? 0),
+            ];
+        }
+        // Sort by this_week_net desc
+        uasort($by_shop, fn($a, $b) => $b['this_week_net'] <=> $a['this_week_net']);
 
         $tw_net = (float) $this_week_totals['total_net'];
         $pw_net = (float) $prev_week_totals['total_net'];
         $change_pct = $pw_net > 0 ? round((($tw_net - $pw_net) / $pw_net) * 100, 1) : 0;
 
         return [
-            'this_week_net' => $tw_net,
-            'this_week_orders' => (int) $this_week_totals['total_orders'],
-            'this_week_profit' => (float) $this_week_totals['total_profit'],
-            'prev_week_net' => $pw_net,
-            'prev_week_orders' => (int) $prev_week_totals['total_orders'],
-            'prev_week_profit' => (float) $prev_week_totals['total_profit'],
-            'change_pct' => $change_pct,
-            'week_start' => $week_start,
-            'prev_week_start' => $prev_week_start,
-            'prev_week_end' => $prev_week_end,
+            'this_week_net'        => $tw_net,
+            'this_week_orders'     => (int) $this_week_totals['total_orders'],
+            'this_week_gift_qty'   => (float) ($tw_gifts['summary']['total_qty'] ?? 0),
+            'this_week_gift_value' => (float) ($tw_gifts['summary']['total_value'] ?? 0),
+            'prev_week_net'        => $pw_net,
+            'prev_week_orders'     => (int) $prev_week_totals['total_orders'],
+            'prev_week_gift_qty'   => (float) ($pw_gifts['summary']['total_qty'] ?? 0),
+            'prev_week_gift_value' => (float) ($pw_gifts['summary']['total_value'] ?? 0),
+            'change_pct'           => $change_pct,
+            'week_start'           => $week_start,
+            'prev_week_start'      => $prev_week_start,
+            'prev_week_end'        => $prev_week_end,
+            'by_shop'              => $by_shop,
         ];
     }
 
