@@ -17,6 +17,7 @@ $today_vn = date('d/m/Y', strtotime($today));
 $trigger_url_all  = TGS_Email_Trigger::get_trigger_url('all');
 $trigger_url_shop = TGS_Email_Trigger::get_trigger_url('shop');
 $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
+$trigger_url_backup = TGS_Email_Trigger::get_trigger_url('backup');
 ?>
 
 <div class="tgs-email-dashboard" style="max-width:1200px; margin:0 auto;">
@@ -25,7 +26,7 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
     <div class="tgs-er-header">
         <div>
             <h2 class="tgs-er-title">Email Báo Cáo Tự Động</h2>
-            <p class="tgs-er-subtitle">Gửi báo cáo bán hàng, thu ngân hàng, MIN/MAX tồn kho cho leaders & sếp.</p>
+            <p class="tgs-er-subtitle">Gửi báo cáo shop, kho và trạng thái backup DB tự động cho leaders & sếp.</p>
         </div>
         <div class="tgs-er-header-actions">
             <a href="<?php echo admin_url('admin.php?page=tgs-shop-management&view=email-report-settings'); ?>"
@@ -51,6 +52,7 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button id="btn-send-shop" class="tgs-er-btn tgs-er-btn-primary">Gửi Báo Cáo Shop</button>
                 <button id="btn-send-warehouse" class="tgs-er-btn tgs-er-btn-teal">Gửi Báo Cáo Kho</button>
+                <button id="btn-send-backup" class="tgs-er-btn tgs-er-btn-outline">Gửi Báo Cáo Backup</button>
                 <button id="btn-send-all" class="tgs-er-btn tgs-er-btn-success">Gửi Tất Cả</button>
             </div>
         </div>
@@ -66,6 +68,7 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
             <select id="tgs-email-preview-type" class="tgs-er-input" style="width:auto;">
                 <option value="shop_report">Báo cáo Shop</option>
                 <option value="warehouse_report">Báo cáo Kho</option>
+                <option value="backup_report">Báo cáo Backup DB</option>
             </select>
             <button id="btn-preview" class="tgs-er-btn tgs-er-btn-outline">Xem Trước</button>
         </div>
@@ -101,6 +104,11 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
                     <span class="tgs-er-trigger-badge tgs-er-trigger-badge--wh">Kho</span>
                     <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_wh); ?></code>
                     <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_wh); ?>">Copy</button>
+                </div>
+                <div class="tgs-er-trigger-row">
+                    <span class="tgs-er-trigger-badge tgs-er-trigger-badge--all">Backup</span>
+                    <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_backup); ?></code>
+                    <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_backup); ?>">Copy</button>
                 </div>
             </div>
         </div>
@@ -138,6 +146,9 @@ $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
                         </span>
                         <span id="rcpt-type-wh" class="tgs-er-toggle active" data-value="warehouse_report">
                             <i class="tgs-er-tick"></i> Báo cáo Kho
+                        </span>
+                        <span id="rcpt-type-backup" class="tgs-er-toggle" data-value="backup_report">
+                            <i class="tgs-er-tick"></i> Backup DB
                         </span>
                     </div>
                 </div>

@@ -23,6 +23,7 @@ if (!defined('ABSPATH')) exit;
             <option value="">Tất cả loại</option>
             <option value="shop_report">Shop Report</option>
             <option value="warehouse_report">Warehouse Report</option>
+            <option value="backup_report">Backup Report</option>
         </select>
         <button id="btn-log-filter" class="button" style="padding:6px 14px;">🔍 Lọc</button>
     </div>

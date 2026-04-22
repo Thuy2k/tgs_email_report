@@ -12,6 +12,7 @@ define('TGS_EMAIL_TABLE_RECIPIENTS', 'wp_global_email_report_recipients');
 /* ── Email types ── */
 define('TGS_EMAIL_TYPE_SHOP',      'shop_report');      // Báo cáo shop bán hàng
 define('TGS_EMAIL_TYPE_WAREHOUSE', 'warehouse_report'); // Báo cáo kho MIN/MAX
+define('TGS_EMAIL_TYPE_BACKUP',    'backup_report');    // Báo cáo backup DB tự động
 
 /* ── Ledger types (from tgs_shop_management) ── */
 define('TGS_EMAIL_LEDGER_TYPE_IMPORT',    1);

@@ -161,6 +161,7 @@ class TGS_Email_Settings
         $subject = $atts['subject'] ?? '';
         $message = $atts['message'] ?? '';
         $headers = $atts['headers'] ?? [];
+        $attachments = $atts['attachments'] ?? [];
 
         // Parse CC từ headers
         $cc = [];
@@ -183,12 +184,66 @@ class TGS_Email_Settings
             'subject' => $subject,
             'html'    => $message,
         ];
+
+        // Convert wp_mail attachments (file paths) to Resend attachments.
+        if (!is_array($attachments)) {
+            $attachments = empty($attachments) ? [] : [$attachments];
+        }
+        $resend_attachments = [];
+        foreach ($attachments as $file_path) {
+            $file_path = (string) $file_path;
+            if ($file_path === '' || !file_exists($file_path) || !is_readable($file_path)) {
+                continue;
+            }
+
+            $content = @file_get_contents($file_path);
+            if ($content === false) {
+                continue;
+            }
+
+            $item = [
+                'filename' => basename($file_path),
+                'content'  => base64_encode($content),
+            ];
+            if (function_exists('mime_content_type')) {
+                $mime = @mime_content_type($file_path);
+                if (!empty($mime)) {
+                    $item['type'] = $mime;
+                }
+            }
+            $resend_attachments[] = $item;
+        }
+        if (!empty($resend_attachments)) {
+            $body['attachments'] = $resend_attachments;
+        }
+
         if (!empty($cc)) {
             $body['cc'] = $cc;
         }
 
+        $raw_attachment_bytes = 0;
+        if (!empty($resend_attachments)) {
+            foreach ($resend_attachments as $att) {
+                // base64 length x 3/4 ~= bytes gốc (xấp xỉ)
+                $raw_attachment_bytes += (int) floor((strlen($att['content'] ?? '') * 3) / 4);
+            }
+        }
+
+        // Timeout mặc định cao hơn để upload payload lớn (attachment) ổn định hơn.
+        // Có thể override qua filter tgs_email_resend_timeout.
+        $timeout_seconds = 60;
+        if ($raw_attachment_bytes > 0) {
+            // Ước lượng tốc độ upload tối thiểu 250KB/s để tránh timeout giả.
+            $estimated = (int) ceil(($raw_attachment_bytes * 1.35) / (250 * 1024));
+            $timeout_seconds = max(60, min(300, $estimated + 20));
+        }
+        $timeout_seconds = (int) apply_filters('tgs_email_resend_timeout', $timeout_seconds, $raw_attachment_bytes, $atts);
+        if ($timeout_seconds < 30) {
+            $timeout_seconds = 30;
+        }
+
         $response = wp_remote_post('https://api.resend.com/emails', [
-            'timeout' => 30,
+            'timeout' => $timeout_seconds,
             'headers' => [
                 'Authorization' => 'Bearer ' . $api_key,
                 'Content-Type'  => 'application/json',

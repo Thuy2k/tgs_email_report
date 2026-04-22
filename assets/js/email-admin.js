@@ -84,6 +84,7 @@
 
     $(document).on('click', '#btn-send-shop', function () { sendEmail('tgs_email_send_shop', $(this)); });
     $(document).on('click', '#btn-send-warehouse', function () { sendEmail('tgs_email_send_warehouse', $(this)); });
+    $(document).on('click', '#btn-send-backup', function () { sendEmail('tgs_email_send_backup', $(this)); });
     $(document).on('click', '#btn-send-all', function () { sendEmail('tgs_email_send_all', $(this)); });
 
     /* ────────────────────────────────────────
@@ -138,6 +139,7 @@
             + '<th>Vai trò</th>'
             + '<th style="text-align:center;">Báo cáo Shop</th>'
             + '<th style="text-align:center;">Báo cáo Kho</th>'
+            + '<th style="text-align:center;">Backup DB</th>'
             + '<th style="text-align:center;">Trạng thái</th>'
             + '<th style="text-align:center;">Gửi riêng</th>'
             + '<th></th>'
@@ -148,12 +150,16 @@
             try { types = JSON.parse(r.email_types); } catch (e) { }
             var hasShop = types.indexOf('shop_report') >= 0;
             var hasWh = types.indexOf('warehouse_report') >= 0;
+            var hasBackup = types.indexOf('backup_report') >= 0;
             var isActive = parseInt(r.is_active);
 
             var shopCell = hasShop
                 ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
                 : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
             var whCell = hasWh
+                ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
+                : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
+            var backupCell = hasBackup
                 ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
                 : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
 
@@ -169,7 +175,8 @@
                 + ' data-name="' + escHtml(r.display_name) + '"'
                 + ' data-role="' + escHtml(r.role_label) + '"'
                 + ' data-shop="' + (hasShop ? '1' : '0') + '"'
-                + ' data-wh="' + (hasWh ? '1' : '0') + '"';
+                + ' data-wh="' + (hasWh ? '1' : '0') + '"'
+                + ' data-backup="' + (hasBackup ? '1' : '0') + '"';
 
             // Per-recipient send buttons
             var sendBtns = '';
@@ -179,6 +186,9 @@
                 }
                 if (hasWh) {
                     sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="warehouse_report" title="Gửi báo cáo Kho riêng">Kho</button>';
+                }
+                if (hasBackup) {
+                    sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="backup_report" title="Gửi báo cáo Backup riêng" style="margin-left:4px;">Backup</button>';
                 }
             } else {
                 sendBtns = '<span style="color:#ccc;">—</span>';
@@ -190,6 +200,7 @@
             html += '<td>' + escHtml(r.role_label) + '</td>';
             html += '<td style="text-align:center;">' + shopCell + '</td>';
             html += '<td style="text-align:center;">' + whCell + '</td>';
+            html += '<td style="text-align:center;">' + backupCell + '</td>';
             html += '<td style="text-align:center;">' + statusHtml + '</td>';
             html += '<td style="text-align:center; white-space:nowrap;">' + sendBtns + '</td>';
             html += '<td style="white-space:nowrap;">'
@@ -214,6 +225,7 @@
         var types = [];
         if ($('#rcpt-type-shop').hasClass('active')) types.push('shop_report');
         if ($('#rcpt-type-wh').hasClass('active')) types.push('warehouse_report');
+        if ($('#rcpt-type-backup').hasClass('active')) types.push('backup_report');
 
         var data = {
             email: $('#rcpt-email').val(),
@@ -227,7 +239,7 @@
             return;
         }
         if (!types.length) {
-            showToast('Chọn ít nhất 1 loại báo cáo (Shop hoặc Kho)', 'error');
+            showToast('Chọn ít nhất 1 loại báo cáo', 'error');
             return;
         }
 
@@ -250,6 +262,7 @@
         $('#btn-cancel-edit').remove();
         // Reset toggles to active
         $('#rcpt-type-shop, #rcpt-type-wh').addClass('active');
+        $('#rcpt-type-backup').removeClass('active');
     }
 
     // Edit recipient — fill form
@@ -261,6 +274,7 @@
         $('#rcpt-role').val($btn.data('role'));
         $('#rcpt-type-shop').toggleClass('active', $btn.data('shop') == 1);
         $('#rcpt-type-wh').toggleClass('active', $btn.data('wh') == 1);
+        $('#rcpt-type-backup').toggleClass('active', $btn.data('backup') == 1);
         $('#btn-add-recipient').html('Lưu thay đổi');
         // Add cancel button if not exists
         if (!$('#btn-cancel-edit').length) {
@@ -622,7 +636,7 @@
         var $btn = $(this);
         var recipientId = $btn.data('id');
         var emailType = $btn.data('type');
-        var typeName = emailType === 'shop_report' ? 'Shop' : 'Kho';
+        var typeName = emailType === 'shop_report' ? 'Shop' : (emailType === 'warehouse_report' ? 'Kho' : 'Backup DB');
         var dates = getDates();
 
         if (!confirm('Gửi báo cáo ' + typeName + ' riêng cho người này?\n(' + dates.date_from + ' → ' + dates.date_to + ')')) return;

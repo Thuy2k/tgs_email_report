@@ -5,6 +5,7 @@
  * Actions:
  *   tgs_email_send_shop       — Gửi báo cáo shop
  *   tgs_email_send_warehouse  — Gửi báo cáo kho
+ *   tgs_email_send_backup     — Gửi báo cáo backup DB
  *   tgs_email_send_all        — Gửi cả 2 loại
  *   tgs_email_get_logs        — Lấy lịch sử gửi
  *   tgs_email_get_log_detail  — Xem chi tiết 1 email đã gửi
@@ -23,6 +24,7 @@ class TGS_Email_Ajax
         $actions = [
             'tgs_email_send_shop',
             'tgs_email_send_warehouse',
+            'tgs_email_send_backup',
             'tgs_email_send_all',
             'tgs_email_send_individual',
             'tgs_email_get_logs',
@@ -111,6 +113,28 @@ class TGS_Email_Ajax
     }
 
     /* ════════════════════════════════════════════
+     *  GỬI BÁO CÁO BACKUP DB
+     * ════════════════════════════════════════════ */
+    public static function handle_send_backup()
+    {
+        self::check();
+        list($date_from, $date_to) = self::parse_dates();
+
+        $result = TGS_Email_Sender::send_backup_report(
+            $date_from,
+            $date_to,
+            'manual',
+            get_current_user_id()
+        );
+
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error($result);
+        }
+    }
+
+    /* ════════════════════════════════════════════
      *  GỬI CẢ 2 BÁO CÁO
      * ════════════════════════════════════════════ */
     public static function handle_send_all()
@@ -119,16 +143,19 @@ class TGS_Email_Ajax
         list($date_from, $date_to) = self::parse_dates();
 
         $uid = get_current_user_id();
-        $shop_result = TGS_Email_Sender::send_shop_report($date_from, $date_to, 'manual', $uid);
-        $wh_result   = TGS_Email_Sender::send_warehouse_report($date_from, $date_to, 'manual', $uid);
+        $shop_result   = TGS_Email_Sender::send_shop_report($date_from, $date_to, 'manual', $uid);
+        $wh_result     = TGS_Email_Sender::send_warehouse_report($date_from, $date_to, 'manual', $uid);
+        $backup_result = TGS_Email_Sender::send_backup_report($date_from, $date_to, 'manual', $uid);
 
         wp_send_json_success([
             'shop_report'      => $shop_result,
             'warehouse_report' => $wh_result,
+            'backup_report'    => $backup_result,
             'message'          => sprintf(
-                'Shop: %s | Kho: %s',
+                'Shop: %s | Kho: %s | Backup: %s',
                 $shop_result['success'] ? '✓ OK' : '✗ Lỗi',
-                $wh_result['success'] ? '✓ OK' : '✗ Lỗi'
+                $wh_result['success'] ? '✓ OK' : '✗ Lỗi',
+                $backup_result['success'] ? '✓ OK' : '✗ Lỗi'
             ),
         ]);
     }
@@ -144,7 +171,7 @@ class TGS_Email_Ajax
         $recipient_id = (int) ($_POST['recipient_id'] ?? 0);
         $email_type   = sanitize_text_field($_POST['email_type'] ?? '');
 
-        if (!$recipient_id || !in_array($email_type, [TGS_EMAIL_TYPE_SHOP, TGS_EMAIL_TYPE_WAREHOUSE], true)) {
+        if (!$recipient_id || !in_array($email_type, [TGS_EMAIL_TYPE_SHOP, TGS_EMAIL_TYPE_WAREHOUSE, TGS_EMAIL_TYPE_BACKUP], true)) {
             wp_send_json_error(['message' => 'Thiếu thông tin recipient hoặc loại báo cáo']);
         }
 
@@ -164,6 +191,8 @@ class TGS_Email_Ajax
 
         if ($email_type === TGS_EMAIL_TYPE_SHOP) {
             $result = TGS_Email_Sender::send_shop_report($date_from, $date_to, 'manual_individual', $uid, $override_recipients);
+        } elseif ($email_type === TGS_EMAIL_TYPE_BACKUP) {
+            $result = TGS_Email_Sender::send_backup_report($date_from, $date_to, 'manual_individual', $uid, $override_recipients);
         } else {
             $result = TGS_Email_Sender::send_warehouse_report($date_from, $date_to, 'manual_individual', $uid, $override_recipients);
         }
@@ -187,7 +216,12 @@ class TGS_Email_Ajax
         $type = sanitize_text_field($_POST['email_type'] ?? 'shop_report');
         $settings = TGS_Email_Settings::get();
 
-        if ($type === TGS_EMAIL_TYPE_WAREHOUSE) {
+        if ($type === TGS_EMAIL_TYPE_BACKUP) {
+            $html = TGS_Email_Sender::render_template('email-backup-report.php', array_merge(
+                TGS_Email_Sender::get_backup_preview_data(),
+                ['date_from' => $date_from, 'date_to' => $date_to]
+            ));
+        } elseif ($type === TGS_EMAIL_TYPE_WAREHOUSE) {
             TGS_Collector_Base::set_blog_filter($settings['warehouse_report_include_blogs'] ?? []);
             $minmax   = TGS_Collector_Warehouse_MinMax::collect($date_from, $date_to);
             $stock    = TGS_Collector_Warehouse_Stock::collect($date_from, $date_to);
@@ -254,6 +288,8 @@ class TGS_Email_Ajax
 
             if ($type === TGS_EMAIL_TYPE_WAREHOUSE) {
                 $result = TGS_Email_Sender::send_warehouse_report($date_from, $date_to, 'resend', $uid);
+            } elseif ($type === TGS_EMAIL_TYPE_BACKUP) {
+                $result = TGS_Email_Sender::send_backup_report($date_from, $date_to, 'resend', $uid);
             } else {
                 $result = TGS_Email_Sender::send_shop_report($date_from, $date_to, 'resend', $uid);
             }
