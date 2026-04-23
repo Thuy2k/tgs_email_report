@@ -72,7 +72,7 @@ $total_closing_value = max((float) ($t['closing_value'] ?? 1), 1);
                     </td>
                     <td width="20%" style="padding:0 4px; vertical-align:top;">
                         <div style="font-size:10px; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Nhập</div>
-                        <div style="font-size:13px; font-weight:700; color:#1f8f4d; margin-top:3px;">+<?php echo $fmt($s['in_qty']); ?></div>
+                        <div style="font-size:13px; font-weight:700; color:#1f8f4d; margin-top:3px;">+<?php echo $fmt(max(0, (float)($s['in_qty'] ?? 0) + (float)($s['adjustment_qty'] ?? 0))); ?></div>
                     </td>
                     <td width="20%" style="padding:0 4px; vertical-align:top;">
                         <div style="font-size:10px; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Bán</div>

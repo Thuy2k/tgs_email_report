@@ -46,8 +46,8 @@ $shell = 'margin-bottom:20px; background:#ffffff; border:1px solid #e3ebf3; bord
             <td width="50%" style="padding:0 6px 10px 0; vertical-align:top;">
                 <div style="background:#f3fbf6; border:1px solid #dcefe3; border-radius:18px; padding:14px 15px;">
                     <div style="font-size:11px; color:#6d8198; text-transform:uppercase; letter-spacing:0.8px;">Nhập hàng</div>
-                    <div style="font-size:21px; font-weight:700; color:#1f8f4d; margin-top:4px;">+<?php echo $fmt($t['in_qty'] ?? 0); ?></div>
-                    <div style="font-size:11px; color:#77889a; margin-top:2px;"><?php echo $fmt($t['in_value'] ?? 0); ?>₫</div>
+                    <div style="font-size:21px; font-weight:700; color:#1f8f4d; margin-top:4px;">+<?php echo $fmt(max(0, (float)($t['in_qty'] ?? 0) + (float)($t['adjustment_qty'] ?? 0))); ?></div>
+                    <div style="font-size:11px; color:#77889a; margin-top:2px;"><?php echo $fmt(max(0, (float)($t['in_value'] ?? 0) + (float)($t['adjustment_value'] ?? 0))); ?>₫</div>
                 </div>
             </td>
             <td width="50%" style="padding:0 0 10px 6px; vertical-align:top;">

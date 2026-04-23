@@ -27,6 +27,8 @@ class TGS_Collector_Warehouse_Stock extends TGS_Collector_Base
                 'opening_value'    => 0,
                 'in_qty'           => 0,
                 'in_value'         => 0,
+                'adjustment_qty'   => 0,
+                'adjustment_value' => 0,
                 'out_qty'          => 0,
                 'out_value'        => 0,
                 'damage_qty'       => 0,
@@ -60,6 +62,8 @@ class TGS_Collector_Warehouse_Stock extends TGS_Collector_Base
                 COALESCE(op.opening_value, 0) as opening_value,
                 COALESCE(mv.in_qty, 0) as in_qty,
                 COALESCE(mv.in_value, 0) as in_value,
+                COALESCE(mv.adjustment_qty, 0) as adjustment_qty,
+                COALESCE(mv.adjustment_value, 0) as adjustment_value,
                 COALESCE(mv.out_qty, 0) as out_qty,
                 COALESCE(mv.out_value, 0) as out_value,
                 COALESCE(mv.damage_qty, 0) as damage_qty,
@@ -91,6 +95,8 @@ class TGS_Collector_Warehouse_Stock extends TGS_Collector_Base
                     blog_id,
                     SUM(in_qty) as in_qty,
                     SUM(in_value) as in_value,
+                    SUM(adjustment_qty) as adjustment_qty,
+                    SUM(adjustment_value) as adjustment_value,
                     SUM(out_qty) as out_qty,
                     SUM(out_value) as out_value,
                     SUM(damage_qty) as damage_qty,
@@ -131,6 +137,8 @@ class TGS_Collector_Warehouse_Stock extends TGS_Collector_Base
                 'opening_value'   => (float) $r->opening_value,
                 'in_qty'          => (float) $r->in_qty,
                 'in_value'        => (float) $r->in_value,
+                'adjustment_qty'  => (float) $r->adjustment_qty,
+                'adjustment_value' => (float) $r->adjustment_value,
                 'out_qty'         => (float) $r->out_qty,
                 'out_value'       => (float) $r->out_value,
                 'damage_qty'      => (float) $r->damage_qty,
@@ -150,6 +158,8 @@ class TGS_Collector_Warehouse_Stock extends TGS_Collector_Base
             $result['totals']['opening_value']     += (float) $r->opening_value;
             $result['totals']['in_qty']            += (float) $r->in_qty;
             $result['totals']['in_value']           += (float) $r->in_value;
+            $result['totals']['adjustment_qty']     += (float) $r->adjustment_qty;
+            $result['totals']['adjustment_value']   += (float) $r->adjustment_value;
             $result['totals']['out_qty']            += (float) $r->out_qty;
             $result['totals']['out_value']          += (float) $r->out_value;
             $result['totals']['damage_qty']         += (float) $r->damage_qty;
