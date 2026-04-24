@@ -5,6 +5,7 @@
  * URL dạng:  https://domain.com/?tgs_email_trigger=1&type=shop&secret=xxx
  *            https://domain.com/?tgs_email_trigger=1&type=warehouse&secret=xxx
  *            https://domain.com/?tgs_email_trigger=1&type=backup&secret=xxx
+ *            https://domain.com/?tgs_email_trigger=1&type=einvoice&secret=xxx
  *            https://domain.com/?tgs_email_trigger=1&type=all&secret=xxx
  *
  * Secret được lưu trong option `tgs_email_trigger_secret`.
@@ -68,6 +69,8 @@ class TGS_Email_Trigger
         }
         if ($type === 'backup' || $type === 'all') {
             $results['backup'] = TGS_Email_Sender::send_backup_report($date_from, $date_to, $trigger, $uid);
+        if ($type === 'einvoice' || $type === 'all') {
+            $results['einvoice'] = TGS_Email_Sender::send_einvoice_report($date_from, $date_to, $trigger, $uid);
         }
 
         // Trả JSON

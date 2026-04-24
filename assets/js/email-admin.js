@@ -85,6 +85,7 @@
     $(document).on('click', '#btn-send-shop', function () { sendEmail('tgs_email_send_shop', $(this)); });
     $(document).on('click', '#btn-send-warehouse', function () { sendEmail('tgs_email_send_warehouse', $(this)); });
     $(document).on('click', '#btn-send-backup', function () { sendEmail('tgs_email_send_backup', $(this)); });
+    $(document).on('click', '#btn-send-einvoice', function () { sendEmail('tgs_email_send_einvoice', $(this)); });
     $(document).on('click', '#btn-send-all', function () { sendEmail('tgs_email_send_all', $(this)); });
 
     /* ────────────────────────────────────────
@@ -140,6 +141,7 @@
             + '<th style="text-align:center;">Báo cáo Shop</th>'
             + '<th style="text-align:center;">Báo cáo Kho</th>'
             + '<th style="text-align:center;">Backup DB</th>'
+            + '<th style="text-align:center;">Báo cáo HĐĐT</th>'
             + '<th style="text-align:center;">Trạng thái</th>'
             + '<th style="text-align:center;">Gửi riêng</th>'
             + '<th></th>'
@@ -151,6 +153,7 @@
             var hasShop = types.indexOf('shop_report') >= 0;
             var hasWh = types.indexOf('warehouse_report') >= 0;
             var hasBackup = types.indexOf('backup_report') >= 0;
+            var hasEinv = types.indexOf('einvoice_report') >= 0;
             var isActive = parseInt(r.is_active);
 
             var shopCell = hasShop
@@ -160,6 +163,7 @@
                 ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
                 : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
             var backupCell = hasBackup
+            var einvCell = hasEinv
                 ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
                 : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
 
@@ -177,6 +181,7 @@
                 + ' data-shop="' + (hasShop ? '1' : '0') + '"'
                 + ' data-wh="' + (hasWh ? '1' : '0') + '"'
                 + ' data-backup="' + (hasBackup ? '1' : '0') + '"';
+                + ' data-einv="' + (hasEinv ? '1' : '0') + '"';
 
             // Per-recipient send buttons
             var sendBtns = '';
@@ -189,6 +194,8 @@
                 }
                 if (hasBackup) {
                     sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="backup_report" title="Gửi báo cáo Backup riêng" style="margin-left:4px;">Backup</button>';
+                if (hasEinv) {
+                    sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="einvoice_report" title="Gửi báo cáo HĐĐT riêng" style="margin-left:4px;">HĐĐT</button>';
                 }
             } else {
                 sendBtns = '<span style="color:#ccc;">—</span>';
@@ -201,6 +208,7 @@
             html += '<td style="text-align:center;">' + shopCell + '</td>';
             html += '<td style="text-align:center;">' + whCell + '</td>';
             html += '<td style="text-align:center;">' + backupCell + '</td>';
+            html += '<td style="text-align:center;">' + einvCell + '</td>';
             html += '<td style="text-align:center;">' + statusHtml + '</td>';
             html += '<td style="text-align:center; white-space:nowrap;">' + sendBtns + '</td>';
             html += '<td style="white-space:nowrap;">'
@@ -226,6 +234,7 @@
         if ($('#rcpt-type-shop').hasClass('active')) types.push('shop_report');
         if ($('#rcpt-type-wh').hasClass('active')) types.push('warehouse_report');
         if ($('#rcpt-type-backup').hasClass('active')) types.push('backup_report');
+        if ($('#rcpt-type-einv').hasClass('active')) types.push('einvoice_report');
 
         var data = {
             email: $('#rcpt-email').val(),
@@ -239,7 +248,7 @@
             return;
         }
         if (!types.length) {
-            showToast('Chọn ít nhất 1 loại báo cáo', 'error');
+            showToast('Chọn ít nhất 1 loại báo cáo (Shop/Kho/HĐĐT)', 'error');
             return;
         }
 
@@ -261,7 +270,7 @@
         $('#btn-add-recipient').html('+ Thêm');
         $('#btn-cancel-edit').remove();
         // Reset toggles to active
-        $('#rcpt-type-shop, #rcpt-type-wh').addClass('active');
+        $('#rcpt-type-shop, #rcpt-type-wh, #rcpt-type-einv').addClass('active');
         $('#rcpt-type-backup').removeClass('active');
     }
 
@@ -275,6 +284,7 @@
         $('#rcpt-type-shop').toggleClass('active', $btn.data('shop') == 1);
         $('#rcpt-type-wh').toggleClass('active', $btn.data('wh') == 1);
         $('#rcpt-type-backup').toggleClass('active', $btn.data('backup') == 1);
+        $('#rcpt-type-einv').toggleClass('active', $btn.data('einv') == 1);
         $('#btn-add-recipient').html('Lưu thay đổi');
         // Add cancel button if not exists
         if (!$('#btn-cancel-edit').length) {
@@ -546,7 +556,8 @@
             from_email: $('#from_email').val(),
             from_name: $('#from_name').val(),
             shop_report_include_blogs: $('.shop-blog-cb:checked').map(function () { return parseInt(this.value, 10); }).get(),
-            warehouse_report_include_blogs: $('.wh-blog-cb:checked').map(function () { return parseInt(this.value, 10); }).get()
+            warehouse_report_include_blogs: $('.wh-blog-cb:checked').map(function () { return parseInt(this.value, 10); }).get(),
+            einvoice_report_include_blogs: $('.einv-blog-cb:checked').map(function () { return parseInt(this.value, 10); }).get()
         };
 
         setLoading($btn, true);
@@ -563,7 +574,12 @@
     // Toggle tất cả shop checkboxes
     $(document).on('click', '.btn-toggle-all', function () {
         var group   = $(this).data('group');
-        var $cbs    = group === 'shop' ? $('.shop-blog-cb') : $('.wh-blog-cb');
+        var $cbs = $('.wh-blog-cb');
+        if (group === 'shop') {
+            $cbs = $('.shop-blog-cb');
+        } else if (group === 'einv') {
+            $cbs = $('.einv-blog-cb');
+        }
         var allChecked = $cbs.length === $cbs.filter(':checked').length;
         $cbs.prop('checked', !allChecked);
         $(this).text(allChecked ? 'Chọn tất cả' : 'Bỏ chọn tất cả');
@@ -636,7 +652,7 @@
         var $btn = $(this);
         var recipientId = $btn.data('id');
         var emailType = $btn.data('type');
-        var typeName = emailType === 'shop_report' ? 'Shop' : (emailType === 'warehouse_report' ? 'Kho' : 'Backup DB');
+        var typeName = emailType === 'shop_report' ? 'Shop' : (emailType === 'warehouse_report' ? 'Kho' : (emailType === 'backup_report' ? 'Backup DB' : 'HĐĐT'));
         var dates = getDates();
 
         if (!confirm('Gửi báo cáo ' + typeName + ' riêng cho người này?\n(' + dates.date_from + ' → ' + dates.date_to + ')')) return;

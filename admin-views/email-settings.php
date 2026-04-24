@@ -23,6 +23,7 @@ foreach ($all_blogs as $b) {
 
 $shop_filter_blogs = (array) ($settings['shop_report_include_blogs'] ?? []);
 $wh_filter_blogs   = (array) ($settings['warehouse_report_include_blogs'] ?? []);
+$einv_filter_blogs = (array) ($settings['einvoice_report_include_blogs'] ?? []);
 ?>
 
 <div class="tgs-email-dashboard" style="max-width:800px; margin:0 auto;">
@@ -242,6 +243,25 @@ $wh_filter_blogs   = (array) ($settings['warehouse_report_include_blogs'] ?? [])
                         <input type="checkbox" class="wh-blog-cb" value="<?php echo (int)$b->blog_id; ?>"
                                <?php checked(in_array((int)$b->blog_id, $wh_filter_blogs, true)); ?>
                                style="width:16px; height:16px; appearance:checkbox !important; -webkit-appearance:checkbox !important; accent-color:#5a2d82; cursor:pointer; flex-shrink:0;">
+                        <span><?php echo esc_html($blog_names[$b->blog_id]); ?></span>
+                        <span style="margin-left:auto; font-size:11px; color:#999;">#<?php echo (int)$b->blog_id; ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- E-Invoice Report -->
+            <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <strong style="font-size:13px; color:#0f766e;">🧾 Báo cáo HĐĐT</strong>
+                    <button type="button" class="btn-toggle-all" data-group="einv" style="font-size:11px; padding:3px 8px; border:1px solid #0f766e; border-radius:4px; background:#ecfeff; color:#0f766e; cursor:pointer;">Chọn tất cả</button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto; padding:8px; border:1px solid #e9ecef; border-radius:6px; background:#f8f9fa;">
+                    <?php foreach ($all_blogs as $b): ?>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; padding:4px 6px; border-radius:4px; transition:background .15s;" onmouseover="this.style.background='#ecfeff'" onmouseout="this.style.background='transparent'">
+                        <input type="checkbox" class="einv-blog-cb" value="<?php echo (int)$b->blog_id; ?>"
+                               <?php checked(in_array((int)$b->blog_id, $einv_filter_blogs, true)); ?>
+                               style="width:16px; height:16px; appearance:checkbox !important; -webkit-appearance:checkbox !important; accent-color:#0f766e; cursor:pointer; flex-shrink:0;">
                         <span><?php echo esc_html($blog_names[$b->blog_id]); ?></span>
                         <span style="margin-left:auto; font-size:11px; color:#999;">#<?php echo (int)$b->blog_id; ?></span>
                     </label>

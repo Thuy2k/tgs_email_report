@@ -18,6 +18,7 @@ $trigger_url_all  = TGS_Email_Trigger::get_trigger_url('all');
 $trigger_url_shop = TGS_Email_Trigger::get_trigger_url('shop');
 $trigger_url_wh   = TGS_Email_Trigger::get_trigger_url('warehouse');
 $trigger_url_backup = TGS_Email_Trigger::get_trigger_url('backup');
+$trigger_url_einv = TGS_Email_Trigger::get_trigger_url('einvoice');
 ?>
 
 <div class="tgs-email-dashboard" style="max-width:1200px; margin:0 auto;">
@@ -53,6 +54,7 @@ $trigger_url_backup = TGS_Email_Trigger::get_trigger_url('backup');
                 <button id="btn-send-shop" class="tgs-er-btn tgs-er-btn-primary">Gửi Báo Cáo Shop</button>
                 <button id="btn-send-warehouse" class="tgs-er-btn tgs-er-btn-teal">Gửi Báo Cáo Kho</button>
                 <button id="btn-send-backup" class="tgs-er-btn tgs-er-btn-outline">Gửi Báo Cáo Backup</button>
+                <button id="btn-send-einvoice" class="tgs-er-btn tgs-er-btn-outline">Gửi Báo Cáo HĐĐT</button>
                 <button id="btn-send-all" class="tgs-er-btn tgs-er-btn-success">Gửi Tất Cả</button>
             </div>
         </div>
@@ -69,6 +71,7 @@ $trigger_url_backup = TGS_Email_Trigger::get_trigger_url('backup');
                 <option value="shop_report">Báo cáo Shop</option>
                 <option value="warehouse_report">Báo cáo Kho</option>
                 <option value="backup_report">Báo cáo Backup DB</option>
+                <option value="einvoice_report">Báo cáo HĐĐT</option>
             </select>
             <button id="btn-preview" class="tgs-er-btn tgs-er-btn-outline">Xem Trước</button>
         </div>
@@ -109,6 +112,9 @@ $trigger_url_backup = TGS_Email_Trigger::get_trigger_url('backup');
                     <span class="tgs-er-trigger-badge tgs-er-trigger-badge--all">Backup</span>
                     <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_backup); ?></code>
                     <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_backup); ?>">Copy</button>
+                    <span class="tgs-er-trigger-badge">HĐĐT</span>
+                    <code class="tgs-er-trigger-url"><?php echo esc_html($trigger_url_einv); ?></code>
+                    <button class="tgs-er-btn tgs-er-btn-sm btn-copy-link" data-url="<?php echo esc_attr($trigger_url_einv); ?>">Copy</button>
                 </div>
             </div>
         </div>
@@ -149,6 +155,8 @@ $trigger_url_backup = TGS_Email_Trigger::get_trigger_url('backup');
                         </span>
                         <span id="rcpt-type-backup" class="tgs-er-toggle" data-value="backup_report">
                             <i class="tgs-er-tick"></i> Backup DB
+                        <span id="rcpt-type-einv" class="tgs-er-toggle active" data-value="einvoice_report">
+                            <i class="tgs-er-tick"></i> Báo cáo HĐĐT
                         </span>
                     </div>
                 </div>

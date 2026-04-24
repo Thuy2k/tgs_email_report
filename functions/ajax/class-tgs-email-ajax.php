@@ -25,6 +25,7 @@ class TGS_Email_Ajax
             'tgs_email_send_shop',
             'tgs_email_send_warehouse',
             'tgs_email_send_backup',
+            'tgs_email_send_einvoice',
             'tgs_email_send_all',
             'tgs_email_send_individual',
             'tgs_email_get_logs',
@@ -116,11 +117,15 @@ class TGS_Email_Ajax
      *  GỬI BÁO CÁO BACKUP DB
      * ════════════════════════════════════════════ */
     public static function handle_send_backup()
+     *  GỬI BÁO CÁO HÓA ĐƠN ĐIỆN TỬ
+     * ════════════════════════════════════════════ */
+    public static function handle_send_einvoice()
     {
         self::check();
         list($date_from, $date_to) = self::parse_dates();
 
         $result = TGS_Email_Sender::send_backup_report(
+        $result = TGS_Email_Sender::send_einvoice_report(
             $date_from,
             $date_to,
             'manual',
@@ -146,16 +151,19 @@ class TGS_Email_Ajax
         $shop_result   = TGS_Email_Sender::send_shop_report($date_from, $date_to, 'manual', $uid);
         $wh_result     = TGS_Email_Sender::send_warehouse_report($date_from, $date_to, 'manual', $uid);
         $backup_result = TGS_Email_Sender::send_backup_report($date_from, $date_to, 'manual', $uid);
+        $einv_result = TGS_Email_Sender::send_einvoice_report($date_from, $date_to, 'manual', $uid);
 
         wp_send_json_success([
             'shop_report'      => $shop_result,
             'warehouse_report' => $wh_result,
             'backup_report'    => $backup_result,
+            'einvoice_report'  => $einv_result,
             'message'          => sprintf(
-                'Shop: %s | Kho: %s | Backup: %s',
+                'Shop: %s | Kho: %s | Backup: %s | HĐĐT: %s',
                 $shop_result['success'] ? '✓ OK' : '✗ Lỗi',
                 $wh_result['success'] ? '✓ OK' : '✗ Lỗi',
-                $backup_result['success'] ? '✓ OK' : '✗ Lỗi'
+                $backup_result['success'] ? '✓ OK' : '✗ Lỗi',
+                $einv_result['success'] ? '✓ OK' : '✗ Lỗi'
             ),
         ]);
     }
@@ -171,7 +179,7 @@ class TGS_Email_Ajax
         $recipient_id = (int) ($_POST['recipient_id'] ?? 0);
         $email_type   = sanitize_text_field($_POST['email_type'] ?? '');
 
-        if (!$recipient_id || !in_array($email_type, [TGS_EMAIL_TYPE_SHOP, TGS_EMAIL_TYPE_WAREHOUSE, TGS_EMAIL_TYPE_BACKUP], true)) {
+        if (!$recipient_id || !in_array($email_type, [TGS_EMAIL_TYPE_SHOP, TGS_EMAIL_TYPE_WAREHOUSE, TGS_EMAIL_TYPE_BACKUP, TGS_EMAIL_TYPE_EINVOICE], true)) {
             wp_send_json_error(['message' => 'Thiếu thông tin recipient hoặc loại báo cáo']);
         }
 
@@ -193,6 +201,8 @@ class TGS_Email_Ajax
             $result = TGS_Email_Sender::send_shop_report($date_from, $date_to, 'manual_individual', $uid, $override_recipients);
         } elseif ($email_type === TGS_EMAIL_TYPE_BACKUP) {
             $result = TGS_Email_Sender::send_backup_report($date_from, $date_to, 'manual_individual', $uid, $override_recipients);
+        } elseif ($email_type === TGS_EMAIL_TYPE_EINVOICE) {
+            $result = TGS_Email_Sender::send_einvoice_report($date_from, $date_to, 'manual_individual', $uid, $override_recipients);
         } else {
             $result = TGS_Email_Sender::send_warehouse_report($date_from, $date_to, 'manual_individual', $uid, $override_recipients);
         }
@@ -230,6 +240,14 @@ class TGS_Email_Ajax
                 'minmax' => $minmax, 'stock' => $stock, 'summary' => $summary,
                 'date_from' => $date_from, 'date_to' => $date_to,
             ]);
+        } elseif ($type === TGS_EMAIL_TYPE_EINVOICE) {
+            TGS_Collector_Base::set_blog_filter($settings['einvoice_report_include_blogs'] ?? []);
+            $einvoice = TGS_Collector_Shop_EInvoice::collect($date_from, $date_to);
+            $html = TGS_Email_Sender::render_template('email-einvoice-report.php', [
+                'einvoice' => $einvoice,
+                'date_from' => $date_from,
+                'date_to'   => $date_to,
+            ]);
         } else {
             TGS_Collector_Base::set_blog_filter($settings['shop_report_include_blogs'] ?? []);
             $sales   = TGS_Collector_Shop_Sales::collect($date_from, $date_to);
@@ -237,9 +255,10 @@ class TGS_Email_Ajax
             $max     = TGS_Collector_Shop_Max::collect($date_from, $date_to);
             $summary = TGS_Collector_Summary::collect($date_from, $date_to);
             $gifts   = TGS_Collector_Shop_Gifts::collect($date_from, $date_to);
+            $einvoice = TGS_Collector_Shop_EInvoice::collect($date_from, $date_to);
             $html = TGS_Email_Sender::render_template('email-shop-report.php', [
                 'sales' => $sales, 'bank' => $bank, 'max' => $max, 'summary' => $summary,
-                'gifts' => $gifts,
+                'gifts' => $gifts, 'einvoice' => $einvoice,
                 'date_from' => $date_from, 'date_to' => $date_to,
             ]);
         }
@@ -290,6 +309,8 @@ class TGS_Email_Ajax
                 $result = TGS_Email_Sender::send_warehouse_report($date_from, $date_to, 'resend', $uid);
             } elseif ($type === TGS_EMAIL_TYPE_BACKUP) {
                 $result = TGS_Email_Sender::send_backup_report($date_from, $date_to, 'resend', $uid);
+            } elseif ($type === TGS_EMAIL_TYPE_EINVOICE) {
+                $result = TGS_Email_Sender::send_einvoice_report($date_from, $date_to, 'resend', $uid);
             } else {
                 $result = TGS_Email_Sender::send_shop_report($date_from, $date_to, 'resend', $uid);
             }
@@ -401,6 +422,7 @@ class TGS_Email_Ajax
             'from_name'         => sanitize_text_field($_POST['from_name'] ?? 'TGS System'),
             'shop_report_include_blogs'      => array_values(array_map('intval', array_filter((array) ($_POST['shop_report_include_blogs'] ?? [])))),
             'warehouse_report_include_blogs' => array_values(array_map('intval', array_filter((array) ($_POST['warehouse_report_include_blogs'] ?? [])))),
+            'einvoice_report_include_blogs'  => array_values(array_map('intval', array_filter((array) ($_POST['einvoice_report_include_blogs'] ?? [])))),
         ];
         TGS_Email_Settings::save($data);
         wp_send_json_success(['message' => 'Đã lưu cài đặt!', 'settings' => TGS_Email_Settings::get_for_display()]);
