@@ -117,6 +117,25 @@ class TGS_Email_Ajax
      *  GỬI BÁO CÁO BACKUP DB
      * ════════════════════════════════════════════ */
     public static function handle_send_backup()
+    {
+        self::check();
+        list($date_from, $date_to) = self::parse_dates();
+
+        $result = TGS_Email_Sender::send_backup_report(
+            $date_from,
+            $date_to,
+            'manual',
+            get_current_user_id()
+        );
+
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error($result);
+        }
+    }
+
+    /* ════════════════════════════════════════════
      *  GỬI BÁO CÁO HÓA ĐƠN ĐIỆN TỬ
      * ════════════════════════════════════════════ */
     public static function handle_send_einvoice()
@@ -124,7 +143,6 @@ class TGS_Email_Ajax
         self::check();
         list($date_from, $date_to) = self::parse_dates();
 
-        $result = TGS_Email_Sender::send_backup_report(
         $result = TGS_Email_Sender::send_einvoice_report(
             $date_from,
             $date_to,
@@ -255,10 +273,9 @@ class TGS_Email_Ajax
             $max     = TGS_Collector_Shop_Max::collect($date_from, $date_to);
             $summary = TGS_Collector_Summary::collect($date_from, $date_to);
             $gifts   = TGS_Collector_Shop_Gifts::collect($date_from, $date_to);
-            $einvoice = TGS_Collector_Shop_EInvoice::collect($date_from, $date_to);
             $html = TGS_Email_Sender::render_template('email-shop-report.php', [
                 'sales' => $sales, 'bank' => $bank, 'max' => $max, 'summary' => $summary,
-                'gifts' => $gifts, 'einvoice' => $einvoice,
+                'gifts' => $gifts,
                 'date_from' => $date_from, 'date_to' => $date_to,
             ]);
         }

@@ -145,147 +145,54 @@ $build_einv_url = static function ($blog_id, array $extra = []) use ($report_df,
                 </tr>
             </table>
 
-            <div style="margin-top:10px; padding:10px 12px; border-radius:12px; background:#f7fafc; border:1px solid #e5edf5; color:#4b637a; font-size:12px;">
-                <div style="font-size:13px; font-weight:700; color:#37526d; margin-bottom:8px;">Trạng thái chi tiết</div>
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="font-size:12px; color:#48617a;">
-                    <tr>
-                        <td style="padding:5px 0;"><strong>Đã gửi</strong></td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Số đơn</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['sent_orders'] ?? 0); ?></strong></div>
+            <div style="margin-top:10px; padding:12px; border-radius:16px; background:#f7fafc; border:1px solid #e5edf5;">
+                <div style="font-size:13px; font-weight:700; color:#37526d; margin-bottom:10px;">Trạng thái chi tiết</div>
+                <?php
+                    $status_rows = [
+                        ['label' => 'Đã gửi', 'prefix' => 'sent'],
+                        ['label' => 'Ký demo', 'prefix' => 'demo_signed'],
+                        ['label' => 'Chờ xử lý', 'prefix' => 'pending'],
+                        ['label' => 'Lỗi', 'prefix' => 'failed'],
+                        ['label' => 'Yêu cầu hủy', 'prefix' => 'cancel_requested'],
+                        ['label' => 'Đã hủy', 'prefix' => 'canceled'],
+                    ];
+                ?>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;">
+                    <tr style="background:#f0f4f8;">
+                        <td style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Trạng thái</td>
+                        <td align="right" style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Số đơn</td>
+                        <td align="right" style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Tổng giá trị</td>
+                        <td align="right" style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Có &lt;24M</td>
+                        <td align="right" style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Tách &lt;24M</td>
+                        <td align="right" style="padding:6px 8px; font-size:10px; font-weight:700; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.5px;">Không &lt;24M</td>
+                    </tr>
+                    <?php $si = 0; foreach ($status_rows as $row): ?>
+                    <?php
+                        $bg = ($si % 2 === 0) ? '#ffffff' : '#f9fbfd';
+                        $si++;
+                        $p = $row['prefix'];
+                    ?>
+                    <tr style="background:<?php echo $bg; ?>; border-top:1px solid #eef2f6;">
+                        <td style="padding:8px 8px; vertical-align:top;">
+                            <div style="font-size:12px; font-weight:600; color:#13273e;"><?php echo esc_html($row['label']); ?></div>
                         </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tổng giá trị</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['sent_value'] ?? 0); ?>đ</strong></div>
+                        <td align="right" style="padding:8px 8px; vertical-align:top; white-space:nowrap; font-size:12px; font-weight:700; color:#13273e;">
+                            <?php echo $fmt($s[$p . '_orders'] ?? 0); ?>
                         </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Có &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['sent_under24_count'] ?? 0); ?></strong></div>
+                        <td align="right" style="padding:8px 8px; vertical-align:top; white-space:nowrap; font-size:12px; font-weight:700; color:#13273e;">
+                            <?php echo $fmt($s[$p . '_value'] ?? 0); ?>đ
                         </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tách &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['sent_split_under24_count'] ?? 0); ?></strong></div>
+                        <td align="right" style="padding:8px 8px; vertical-align:top; white-space:nowrap; font-size:12px; font-weight:700; color:#13273e;">
+                            <?php echo $fmt($s[$p . '_under24_count'] ?? 0); ?>
                         </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Không &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['sent_no_under24_count'] ?? 0); ?></strong></div>
+                        <td align="right" style="padding:8px 8px; vertical-align:top; white-space:nowrap; font-size:12px; font-weight:700; color:#13273e;">
+                            <?php echo $fmt($s[$p . '_split_under24_count'] ?? 0); ?>
+                        </td>
+                        <td align="right" style="padding:8px 8px; vertical-align:top; white-space:nowrap; font-size:12px; font-weight:700; color:#13273e;">
+                            <?php echo $fmt($s[$p . '_no_under24_count'] ?? 0); ?>
                         </td>
                     </tr>
-                    <tr>
-                        <td style="padding:5px 0;"><strong>Ký demo</strong></td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Số đơn</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['demo_signed_orders'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tổng giá trị</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['demo_signed_value'] ?? 0); ?>đ</strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Có &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['demo_signed_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tách &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['demo_signed_split_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Không &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['demo_signed_no_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:5px 0;"><strong>Chờ xử lý</strong></td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Số đơn</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['pending_orders'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tổng giá trị</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['pending_value'] ?? 0); ?>đ</strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Có &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['pending_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tách &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['pending_split_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Không &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['pending_no_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:5px 0;"><strong>Lỗi</strong></td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Số đơn</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['failed_orders'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tổng giá trị</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['failed_value'] ?? 0); ?>đ</strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Có &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['failed_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tách &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['failed_split_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Không &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['failed_no_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:5px 0;"><strong>Yêu cầu hủy</strong></td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Số đơn</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['cancel_requested_orders'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tổng giá trị</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['cancel_requested_value'] ?? 0); ?>đ</strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Có &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['cancel_requested_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tách &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['cancel_requested_split_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Không &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['cancel_requested_no_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:5px 0;"><strong>Đã hủy</strong></td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Số đơn</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['canceled_orders'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tổng giá trị</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['canceled_value'] ?? 0); ?>đ</strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Có &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['canceled_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Tách &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['canceled_split_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                        <td align="right" style="padding:5px 0;">
-                            <div style="font-size:11px; color:#6a8096;">Không &lt;24M</div>
-                            <div style="margin-top:2px;"><strong><?php echo $fmt($s['canceled_no_under24_count'] ?? 0); ?></strong></div>
-                        </td>
-                    </tr>
+                    <?php endforeach; ?>
                 </table>
             </div>
 

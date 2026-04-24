@@ -163,6 +163,8 @@
                 ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
                 : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
             var backupCell = hasBackup
+                ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
+                : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
             var einvCell = hasEinv
                 ? '<span class="tgs-er-tag tgs-er-tag--on">Có</span>'
                 : '<span class="tgs-er-tag tgs-er-tag--off">Không</span>';
@@ -180,7 +182,7 @@
                 + ' data-role="' + escHtml(r.role_label) + '"'
                 + ' data-shop="' + (hasShop ? '1' : '0') + '"'
                 + ' data-wh="' + (hasWh ? '1' : '0') + '"'
-                + ' data-backup="' + (hasBackup ? '1' : '0') + '"';
+                + ' data-backup="' + (hasBackup ? '1' : '0') + '"'
                 + ' data-einv="' + (hasEinv ? '1' : '0') + '"';
 
             // Per-recipient send buttons
@@ -194,6 +196,7 @@
                 }
                 if (hasBackup) {
                     sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="backup_report" title="Gửi báo cáo Backup riêng" style="margin-left:4px;">Backup</button>';
+                }
                 if (hasEinv) {
                     sendBtns += '<button class="tgs-er-btn tgs-er-btn-sm tgs-er-btn-outline btn-send-individual" data-id="' + r.recipient_id + '" data-type="einvoice_report" title="Gửi báo cáo HĐĐT riêng" style="margin-left:4px;">HĐĐT</button>';
                 }

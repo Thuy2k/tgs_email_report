@@ -2,7 +2,7 @@
 /**
  * Template: Email Shop Report
  *
- * Biến có sẵn: $sales, $bank, $max, $summary, $gifts, $einvoice, $date_from, $date_to
+ * Biến có sẵn: $sales, $bank, $max, $summary, $gifts, $date_from, $date_to
  *
  * Gộp tất cả shop vào 1 email duy nhất
  */
@@ -124,17 +124,12 @@ ob_start();
 <?php include __DIR__ . '/components/section-shop-max.php'; ?>
 
 <!-- ════════════════════════════════════════════
-     SECTION 6: HOA DON DIEN TU
-     ════════════════════════════════════════════ -->
-<?php include __DIR__ . '/components/section-einvoice.php'; ?>
-
-<!-- ════════════════════════════════════════════
-     SECTION 7: SO SANH TUAN
+     SECTION 6: SO SANH TUAN
      ════════════════════════════════════════════ -->
 <?php include __DIR__ . '/components/section-summary-weekly.php'; ?>
 
 <!-- ════════════════════════════════════════════
-     SECTION 8: CANH BAO
+     SECTION 7: CANH BAO
      ════════════════════════════════════════════ -->
 <?php include __DIR__ . '/components/section-alerts.php'; ?>
 

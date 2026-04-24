@@ -31,7 +31,6 @@ class TGS_Email_Sender
         $max_data       = TGS_Collector_Shop_Max::collect($date_from, $date_to);
         $summary_data   = TGS_Collector_Summary::collect($date_from, $date_to);
         $gifts_data     = TGS_Collector_Shop_Gifts::collect($date_from, $date_to);
-        $einvoice_data  = TGS_Collector_Shop_EInvoice::collect($date_from, $date_to);
 
         $all_data = [
             'sales'   => $sales_data,
@@ -39,7 +38,6 @@ class TGS_Email_Sender
             'max'     => $max_data,
             'summary' => $summary_data,
             'gifts'   => $gifts_data,
-            'einvoice' => $einvoice_data,
             'date_from' => $date_from,
             'date_to'   => $date_to,
         ];
@@ -127,7 +125,10 @@ class TGS_Email_Sender
         $recipients = $override_recipients ?: self::get_recipients(TGS_EMAIL_TYPE_BACKUP);
 
         return self::do_send($subject, $html, $recipients, TGS_EMAIL_TYPE_BACKUP, $date_from, $date_to, $all_data, $triggered_by, $user_id, $prepared['attachments']);
-     *  3) GỬI BÁO CÁO HÓA ĐƠN ĐIỆN TỬ
+    }
+
+    /* ================================================================
+     *  4) GỬI BÁO CÁO HÓA ĐƠN ĐIỆN TỬ
      * ================================================================ */
     public static function send_einvoice_report($date_from, $date_to, $triggered_by = 'manual', $user_id = 0, $override_recipients = null)
     {
@@ -270,6 +271,7 @@ class TGS_Email_Sender
         }
         if ($log->email_type === TGS_EMAIL_TYPE_BACKUP) {
             return self::send_backup_report($log->date_from, $log->date_to, 'resend', get_current_user_id());
+        }
         if ($log->email_type === TGS_EMAIL_TYPE_EINVOICE) {
             return self::send_einvoice_report($log->date_from, $log->date_to, 'resend', get_current_user_id());
         }

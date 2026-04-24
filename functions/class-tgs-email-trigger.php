@@ -69,6 +69,7 @@ class TGS_Email_Trigger
         }
         if ($type === 'backup' || $type === 'all') {
             $results['backup'] = TGS_Email_Sender::send_backup_report($date_from, $date_to, $trigger, $uid);
+        }
         if ($type === 'einvoice' || $type === 'all') {
             $results['einvoice'] = TGS_Email_Sender::send_einvoice_report($date_from, $date_to, $trigger, $uid);
         }

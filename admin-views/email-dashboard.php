@@ -155,6 +155,7 @@ $trigger_url_einv = TGS_Email_Trigger::get_trigger_url('einvoice');
                         </span>
                         <span id="rcpt-type-backup" class="tgs-er-toggle" data-value="backup_report">
                             <i class="tgs-er-tick"></i> Backup DB
+                        </span>
                         <span id="rcpt-type-einv" class="tgs-er-toggle active" data-value="einvoice_report">
                             <i class="tgs-er-tick"></i> Báo cáo HĐĐT
                         </span>
