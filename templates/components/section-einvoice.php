@@ -14,12 +14,21 @@ $shell = 'margin-bottom:20px; background:#ffffff; border:1px solid #e3ebf3; bord
 $report_df = !empty($date_from ?? '') ? (string) $date_from : current_time('Y-m-d');
 $report_dt = !empty($date_to ?? '') ? (string) $date_to : $report_df;
 $build_einv_url = static function ($blog_id, array $extra = []) use ($report_df, $report_dt) {
+    // Ưu tiên route tích hợp trong tgs-shop-management; fallback về page standalone tgs-einvoice.
+    $default_page = class_exists('TGS_Shop_Management') ? 'tgs-shop-management' : 'tgs-einvoice';
+    $page = apply_filters('tgs_email_report_einvoice_detail_page', $default_page, (int) $blog_id);
+    $view = apply_filters('tgs_email_report_einvoice_detail_view', 'einvoice-list', (int) $blog_id, $page);
+
     $args = array_merge([
-        'page' => 'tgs-shop-management',
-        'view' => 'einvoice-list',
+        'page' => $page,
         'df'   => $report_df,
         'dt'   => $report_dt,
     ], $extra);
+
+    if ($page === 'tgs-shop-management' && !empty($view)) {
+        $args['view'] = $view;
+    }
+
     return add_query_arg($args, get_admin_url((int) $blog_id, 'admin.php'));
 };
 ?>
