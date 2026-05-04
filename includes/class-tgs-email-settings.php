@@ -10,13 +10,16 @@
 
 if (!defined('ABSPATH')) exit;
 
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
+use PHPMailer\PHPMailer\PHPMailer;
+
 class TGS_Email_Settings
 {
     const OPTION_KEY = 'tgs_email_smtp_settings';
 
     /** Cấu hình mặc định */
     private static $defaults = [
-        'mode'        => 'php',       // php | smtp | resend_api | dev
+        'mode'        => 'php',       // php | smtp | resend_api | dev | fluent_smtp
         'smtp_host'   => '',
         'smtp_port'   => 587,
         'smtp_secure' => 'tls',       // '' | tls | ssl
@@ -32,26 +35,41 @@ class TGS_Email_Settings
         'einvoice_report_include_blogs'  => [],
     ];
 
+    /** Kiểm tra Fluent SMTP có active không */
+    public static function is_fluent_smtp_active()
+    {
+        if (defined('FLUENTMAIL')) {
+            return true;
+        }
+        if (class_exists('FluentSmtpLib\\App\\Services\\Mailer\\BaseHandler') || class_exists('FluentMail\\App\\Services\\Mailer\\BaseHandler')) {
+            return true;
+        }
+        return false;
+    }
+
     /** Hook vào WordPress */
     public static function init()
     {
         $settings = self::get();
 
+        // Nếu không dùng Fluent SMTP, chặn wp_mail sớm để bypass hoàn toàn Fluent.
+        if ($settings['mode'] !== 'fluent_smtp') {
+            add_filter('pre_wp_mail', [__CLASS__, 'intercept_wp_mail'], 1, 2);
+        }
+
         // Dev mode: chặn wp_mail, ghi file thay thế
         if ($settings['mode'] === 'dev') {
-            add_filter('pre_wp_mail', [__CLASS__, 'dev_mode_intercept'], 10, 2);
             return;
         }
 
         // Resend API mode: gửi qua HTTP API thay vì SMTP
         if ($settings['mode'] === 'resend_api') {
-            add_filter('pre_wp_mail', [__CLASS__, 'resend_api_intercept'], 10, 2);
             return;
         }
 
-        // SMTP mode: cấu hình PHPMailer
-        if ($settings['mode'] === 'smtp' && !empty($settings['smtp_host'])) {
-            add_action('phpmailer_init', [__CLASS__, 'configure_phpmailer'], 999);
+        // Fluent SMTP mode: nhường toàn bộ việc gửi mail cho Fluent SMTP
+        if ($settings['mode'] === 'fluent_smtp') {
+            return;
         }
 
         // From email/name override
@@ -65,6 +83,29 @@ class TGS_Email_Settings
                 return $settings['from_name'];
             }, 999);
         }
+    }
+
+    /**
+     * Chặn wp_mail trước khi Fluent SMTP hoặc transport khác can thiệp.
+     * Trả non-null để short-circuit hoàn toàn wp_mail.
+     */
+    public static function intercept_wp_mail($null, $atts)
+    {
+        $settings = self::get();
+
+        if ($settings['mode'] === 'fluent_smtp') {
+            return $null;
+        }
+
+        if ($settings['mode'] === 'dev') {
+            return self::dev_mode_intercept($null, $atts);
+        }
+
+        if ($settings['mode'] === 'resend_api') {
+            return self::resend_api_intercept($null, $atts);
+        }
+
+        return self::direct_phpmailer_send($atts, $settings);
     }
 
     /** Cấu hình PHPMailer cho SMTP */
@@ -149,7 +190,8 @@ class TGS_Email_Settings
         $s = self::get();
         $api_key = self::decrypt_password($s['resend_api_key']);
         if (empty($api_key)) {
-            return null; // Fallback wp_mail nếu chưa có API key
+            $GLOBALS['tgs_resend_last_error'] = 'Chưa cấu hình Resend API key.';
+            return false;
         }
 
         $to = $atts['to'] ?? '';
@@ -270,6 +312,205 @@ class TGS_Email_Settings
         return false;
     }
 
+    /**
+     * Gửi mail trực tiếp bằng PHPMailer để bypass hoàn toàn Fluent SMTP.
+     */
+    private static function direct_phpmailer_send($atts, $settings)
+    {
+        $GLOBALS['tgs_resend_last_error'] = null;
+
+        if (!class_exists(PHPMailer::class)) {
+            require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+            require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
+            require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
+        }
+
+        $mailer = new PHPMailer(true);
+
+        try {
+            self::prepare_phpmailer_message($mailer, $atts, $settings);
+
+            if ($settings['mode'] === 'smtp') {
+                if (empty($settings['smtp_host'])) {
+                    throw new PHPMailerException('Chưa cấu hình SMTP host.');
+                }
+                self::configure_phpmailer_instance($mailer, $settings);
+            } else {
+                $mailer->isMail();
+            }
+
+            return $mailer->send();
+        } catch (\Throwable $e) {
+            $GLOBALS['tgs_resend_last_error'] = $e->getMessage();
+            return false;
+        }
+    }
+
+    private static function configure_phpmailer_instance($mailer, $settings)
+    {
+        $mailer->isSMTP();
+        $mailer->Host       = $settings['smtp_host'];
+        $mailer->Port       = (int) $settings['smtp_port'];
+        $mailer->SMTPAuth   = (bool) $settings['smtp_auth'];
+        $mailer->Timeout    = 15;
+
+        if (!empty($settings['smtp_secure'])) {
+            $mailer->SMTPSecure = $settings['smtp_secure'];
+        }
+
+        if ($settings['smtp_auth'] && $settings['smtp_user']) {
+            $mailer->Username = $settings['smtp_user'];
+            $mailer->Password = self::decrypt_password($settings['smtp_pass']);
+        }
+
+        if (!empty($settings['smtp_no_verify_ssl'])) {
+            $mailer->SMTPOptions = [
+                'ssl' => [
+                    'verify_peer'       => false,
+                    'verify_peer_name'  => false,
+                    'allow_self_signed' => true,
+                ],
+            ];
+        }
+    }
+
+    private static function prepare_phpmailer_message($mailer, $atts, $settings)
+    {
+        $to = $atts['to'] ?? [];
+        if (!is_array($to)) {
+            $to = explode(',', (string) $to);
+        }
+
+        $subject = (string) ($atts['subject'] ?? '');
+        $message = (string) ($atts['message'] ?? '');
+        $headers = $atts['headers'] ?? [];
+        $attachments = $atts['attachments'] ?? [];
+
+        if (!is_array($headers)) {
+            $headers = explode("\n", str_replace("\r\n", "\n", (string) $headers));
+        }
+        if (!is_array($attachments)) {
+            $attachments = empty($attachments) ? [] : [$attachments];
+        }
+
+        $content_type = 'text/plain';
+        $charset = get_bloginfo('charset');
+        $from_email = $settings['from_email'] ?: get_option('admin_email');
+        $from_name = $settings['from_name'] ?: 'TGS System';
+
+        foreach ($headers as $header) {
+            $header = trim((string) $header);
+            if ($header === '') {
+                continue;
+            }
+
+            if (stripos($header, 'Content-Type:') === 0) {
+                $content_type = trim(substr($header, strlen('Content-Type:')));
+                if (stripos($content_type, ';') !== false) {
+                    [$content_type_only, $rest] = array_map('trim', explode(';', $content_type, 2));
+                    $content_type = $content_type_only;
+                    if (preg_match('/charset\s*=\s*([\w\-]+)/i', $rest, $m)) {
+                        $charset = $m[1];
+                    }
+                }
+                continue;
+            }
+
+            if (stripos($header, 'Cc:') === 0) {
+                foreach (explode(',', substr($header, 3)) as $cc) {
+                    $cc = sanitize_email(trim($cc));
+                    if ($cc) {
+                        $mailer->addCC($cc);
+                    }
+                }
+                continue;
+            }
+
+            if (stripos($header, 'Bcc:') === 0) {
+                foreach (explode(',', substr($header, 4)) as $bcc) {
+                    $bcc = sanitize_email(trim($bcc));
+                    if ($bcc) {
+                        $mailer->addBCC($bcc);
+                    }
+                }
+                continue;
+            }
+
+            if (stripos($header, 'Reply-To:') === 0) {
+                foreach (explode(',', substr($header, 9)) as $reply_to) {
+                    $reply_to = sanitize_email(trim($reply_to));
+                    if ($reply_to) {
+                        $mailer->addReplyTo($reply_to);
+                    }
+                }
+                continue;
+            }
+
+            if (stripos($header, 'From:') === 0) {
+                $parsed = self::parse_email_header_address(substr($header, 5));
+                if (!empty($parsed['email'])) {
+                    $from_email = $parsed['email'];
+                    $from_name = $parsed['name'] !== '' ? $parsed['name'] : $from_name;
+                }
+                continue;
+            }
+
+            if (strpos($header, ':') !== false) {
+                [$name, $value] = array_map('trim', explode(':', $header, 2));
+                if ($name !== '' && $value !== '') {
+                    $mailer->addCustomHeader($name, $value);
+                }
+            }
+        }
+
+        $mailer->CharSet = $charset;
+        $mailer->Subject = $subject;
+        $mailer->Body    = $message;
+
+        if (stripos($content_type, 'text/html') === 0) {
+            $mailer->isHTML(true);
+            $mailer->AltBody = wp_strip_all_tags($message);
+        } else {
+            $mailer->isHTML(false);
+        }
+
+        $mailer->setFrom($from_email, $from_name, false);
+
+        foreach ($to as $address) {
+            $parsed = self::parse_email_header_address($address);
+            if (!empty($parsed['email'])) {
+                $mailer->addAddress($parsed['email'], $parsed['name']);
+            }
+        }
+
+        foreach ($attachments as $attachment) {
+            $attachment = (string) $attachment;
+            if ($attachment !== '' && file_exists($attachment) && is_readable($attachment)) {
+                $mailer->addAttachment($attachment);
+            }
+        }
+    }
+
+    private static function parse_email_header_address($value)
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return ['email' => '', 'name' => ''];
+        }
+
+        if (preg_match('/^(.*)<([^>]+)>$/', $value, $m)) {
+            return [
+                'name'  => trim(str_replace(['"', "'"], '', $m[1])),
+                'email' => sanitize_email(trim($m[2])),
+            ];
+        }
+
+        return [
+            'name'  => '',
+            'email' => sanitize_email($value),
+        ];
+    }
+
     /* ════════════════════════════════════════
      * CRUD settings
      * ════════════════════════════════════════ */
@@ -285,7 +526,7 @@ class TGS_Email_Settings
     public static function save($data)
     {
         $clean = [];
-        $clean['mode']        = in_array($data['mode'] ?? '', ['php', 'smtp', 'resend_api', 'dev']) ? $data['mode'] : 'php';
+        $clean['mode']        = in_array($data['mode'] ?? '', ['php', 'smtp', 'resend_api', 'dev', 'fluent_smtp']) ? $data['mode'] : 'php';
         $clean['smtp_host']   = sanitize_text_field($data['smtp_host'] ?? '');
         $clean['smtp_port']   = (int) ($data['smtp_port'] ?? 587);
         $clean['smtp_secure'] = in_array($data['smtp_secure'] ?? '', ['', 'tls', 'ssl']) ? $data['smtp_secure'] : 'tls';
@@ -328,27 +569,11 @@ class TGS_Email_Settings
             return ['success' => false, 'message' => 'Email không hợp lệ'];
         }
 
-        // Re-apply hooks theo settings mới nhất (fix bug: save rồi test ngay trong cùng request)
-        $settings = self::get();
-        remove_all_actions('phpmailer_init');
-        remove_all_filters('pre_wp_mail');
-        remove_all_filters('wp_mail_from');
-        remove_all_filters('wp_mail_from_name');
+        // Re-apply hooks theo settings mới nhất trong cùng request hiện tại.
+        remove_filter('pre_wp_mail', [__CLASS__, 'intercept_wp_mail'], 1);
+        add_filter('pre_wp_mail', [__CLASS__, 'intercept_wp_mail'], 1, 2);
 
-        if ($settings['mode'] === 'dev') {
-            add_filter('pre_wp_mail', [__CLASS__, 'dev_mode_intercept'], 10, 2);
-        } elseif ($settings['mode'] === 'resend_api') {
-            add_filter('pre_wp_mail', [__CLASS__, 'resend_api_intercept'], 10, 2);
-        } elseif ($settings['mode'] === 'smtp' && !empty($settings['smtp_host'])) {
-            add_action('phpmailer_init', [__CLASS__, 'configure_phpmailer'], 999);
-        }
-        // Re-apply from email/name
-        if (!empty($settings['from_email'])) {
-            add_filter('wp_mail_from', function () use ($settings) { return $settings['from_email']; }, 999);
-        }
-        if (!empty($settings['from_name'])) {
-            add_filter('wp_mail_from_name', function () use ($settings) { return $settings['from_name']; }, 999);
-        }
+        $settings = self::get();
 
         $subject = '[TGS Test] Email test SMTP — ' . current_time('H:i d/m/Y');
         $body    = '<div style="font-family:Arial,sans-serif; padding:20px;">';
@@ -375,6 +600,8 @@ class TGS_Email_Settings
                 $msg .= ' (Dev mode — file lưu tại wp-content/uploads/tgs-email-logs/)';
             } elseif ($settings['mode'] === 'resend_api') {
                 $msg .= ' (qua Resend API)';
+            } elseif ($settings['mode'] === 'fluent_smtp') {
+                $msg .= ' (qua Fluent SMTP)';
             }
             return ['success' => true, 'message' => $msg];
         }

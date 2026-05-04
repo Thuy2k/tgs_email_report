@@ -76,7 +76,35 @@ $einv_filter_blogs = (array) ($settings['einvoice_report_include_blogs'] ?? []);
                 <strong style="color:#e91e63;">🚀 Resend API</strong>
                 <p style="margin:8px 0 0; font-size:12px; color:#6c757d;">Gửi qua HTTPS — không cần mở port SMTP. Ổn định nhất cho mọi hosting.</p>
             </label>
+
+            <!-- Fluent SMTP -->
+            <label class="tgs-mode-card <?php echo $settings['mode'] === 'fluent_smtp' ? 'active' : ''; ?>"
+                   style="flex:1; min-width:180px; cursor:pointer; padding:16px; border:2px solid <?php echo $settings['mode'] === 'fluent_smtp' ? '#7c3aed' : '#dee2e6'; ?>; border-radius:8px; background:<?php echo $settings['mode'] === 'fluent_smtp' ? '#f5f3ff' : '#fff'; ?>;">
+                <input type="radio" name="email_mode" value="fluent_smtp" <?php echo $settings['mode'] === 'fluent_smtp' ? 'checked' : ''; ?> style="margin-right:8px;">
+                <strong style="color:#7c3aed;">⚡ Fluent SMTP</strong>
+                <p style="margin:8px 0 0; font-size:12px; color:#6c757d;">TGS không tự gửi nữa, nhường toàn bộ gửi mail cho Fluent SMTP.</p>
+            </label>
         </div>
+    </div>
+
+    <!-- ════════════════════════ FLUENT SMTP INFO ════════════════════════ -->
+    <div id="tgs-fluent-config" class="tgs-email-card" style="background:#fff; border-radius:8px; padding:20px 24px; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:20px; <?php echo $settings['mode'] !== 'fluent_smtp' ? 'display:none;' : ''; ?>">
+        <h3 style="margin:0 0 16px; font-size:16px; color:#7c3aed; border-bottom:1px solid #eee; padding-bottom:8px;">⚡ Fluent SMTP Mode</h3>
+        <div style="background:#f5f3ff; border-radius:6px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:#5b21b6; line-height:1.7;">
+            Khi chọn chế độ này, TGS Email Report chỉ gọi <code>wp_mail()</code> và không tự override SMTP/API.
+        </div>
+        <div style="font-size:13px; color:#4b5563; margin-bottom:10px;">
+            Trạng thái Fluent SMTP:
+            <?php if (TGS_Email_Settings::is_fluent_smtp_active()): ?>
+                <strong style="color:#059669;">Đã phát hiện</strong>
+            <?php else: ?>
+                <strong style="color:#dc2626;">Chưa phát hiện</strong>
+            <?php endif; ?>
+        </div>
+        <a href="<?php echo esc_url(network_admin_url('options-general.php?page=fluent-mail')); ?>"
+           class="button" style="border-color:#7c3aed; color:#7c3aed; background:#fff;">
+            Mở cài đặt Fluent SMTP
+        </a>
     </div>
 
     <!-- ════════════════════════ RESEND API CONFIG ════════════════════════ -->

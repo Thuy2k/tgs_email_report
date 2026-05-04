@@ -494,13 +494,14 @@
         var mode = $(this).val();
         $('#tgs-smtp-config').toggle(mode === 'smtp');
         $('#tgs-resend-config').toggle(mode === 'resend_api');
+        $('#tgs-fluent-config').toggle(mode === 'fluent_smtp');
 
         // Update card styling
         $('.tgs-mode-card').each(function () {
             var $card = $(this);
             var $input = $card.find('input[type="radio"]');
-            var colorMap = { dev: '#28a745', resend_api: '#e91e63' };
-            var bgMap = { dev: '#f0fff4', resend_api: '#fce4ec' };
+            var colorMap = { dev: '#28a745', resend_api: '#e91e63', fluent_smtp: '#7c3aed' };
+            var bgMap = { dev: '#f0fff4', resend_api: '#fce4ec', fluent_smtp: '#f5f3ff' };
             var defaultColor = '#2d5f8a';
             var defaultBg = '#f0f7ff';
             if ($input.is(':checked')) {
@@ -524,7 +525,7 @@
         var noVerifySsl = $p.data('no-verify-ssl');
 
         $('#smtp_host').val(host);
-        $('#smtp_port').val(port);
+        $('https://www.youtube.com/watch?v=FCzEmZQziBQ&t=112s#smtp_port').val(port);
         $('#smtp_secure').val(secure !== undefined ? secure : 'tls');
         if (auth !== undefined) {
             $('#smtp_auth').val(auth ? '1' : '0');
