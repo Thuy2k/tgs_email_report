@@ -91,6 +91,7 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
                     'new_customer_count' => (int) $r->new_customer_count,
                     'avg_order_value'    => (int) $r->order_count > 0 ? round($net_revenue / (int) $r->order_count) : 0,
                     'avg_items_per_order' => round((float) $r->avg_items_per_order, 1),
+                    'hcl_breakdown'      => self::build_hcl_breakdown($r->blog_id, $date_from, $date_to, $net_revenue),
                 ];
                 $rollup_blog_ids[$r->blog_id] = true;
             }
@@ -152,6 +153,7 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
                 'new_customer_count' => 0,
                 'avg_order_value'    => $row->order_count > 0 ? round($net / $row->order_count) : 0,
                 'avg_items_per_order' => 0,
+                'hcl_breakdown'      => self::build_hcl_breakdown($blog->blog_id, $date_from, $date_to, $net),
             ];
         }
 
@@ -161,5 +163,101 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
         });
 
         return $result;
+    }
+
+    private static function build_hcl_breakdown($blog_id, $date_from, $date_to, $shop_net_revenue)
+    {
+        global $wpdb;
+
+        $bid = (int) $blog_id;
+        if ($bid <= 0) {
+            return ['strategic_groups' => [], 'other_revenue' => 0.0, 'strategic_total' => 0.0];
+        }
+
+        $prefix = self::get_blog_prefix($bid);
+        $ledger_table = $prefix . 'local_ledger';
+        $item_table = $prefix . 'local_ledger_item';
+        $product_table = $prefix . 'local_product_name';
+        $mapping_table = $wpdb->base_prefix . 'global_product_sci_mapping';
+        $sci_table = $wpdb->base_prefix . 'global_sci';
+
+        if (
+            $wpdb->get_var("SHOW TABLES LIKE '{$ledger_table}'") !== $ledger_table ||
+            $wpdb->get_var("SHOW TABLES LIKE '{$item_table}'") !== $item_table ||
+            $wpdb->get_var("SHOW TABLES LIKE '{$product_table}'") !== $product_table ||
+            $wpdb->get_var("SHOW TABLES LIKE '{$mapping_table}'") !== $mapping_table ||
+            $wpdb->get_var("SHOW TABLES LIKE '{$sci_table}'") !== $sci_table
+        ) {
+            return ['strategic_groups' => [], 'other_revenue' => 0.0, 'strategic_total' => 0.0];
+        }
+
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT
+                COALESCE(m.global_sci_id, 0) AS global_sci_id,
+                COALESCE(s.sci_code, '')     AS sci_code,
+                COALESCE(s.name, '')         AS sci_name,
+                COALESCE(SUM(
+                    (COALESCE(li.quantity, 0) * COALESCE(li.price, 0))
+                    + COALESCE(li.local_ledger_item_tax_amount, 0)
+                    - COALESCE(li.local_ledger_item_discount_amount, 0)
+                ), 0) AS revenue
+             FROM {$item_table} li
+             INNER JOIN {$ledger_table} l
+                ON l.local_ledger_id = li.local_ledger_id
+             LEFT JOIN {$product_table} pn
+                ON pn.local_product_name_id = li.local_product_name_id
+             LEFT JOIN {$mapping_table} m
+                ON m.sku = TRIM(pn.local_product_sku)
+             LEFT JOIN {$sci_table} s
+                ON s.id = m.global_sci_id
+             WHERE l.local_ledger_type = 10
+               AND l.local_ledger_status IN (2, 4)
+               AND (l.is_deleted = 0 OR l.is_deleted IS NULL)
+               AND (li.is_deleted = 0 OR li.is_deleted IS NULL)
+               AND DATE(l.created_at) BETWEEN %s AND %s
+             GROUP BY COALESCE(m.global_sci_id, 0), COALESCE(s.sci_code, ''), COALESCE(s.name, '')
+             ORDER BY revenue DESC",
+            $date_from,
+            $date_to
+        )) ?: [];
+
+        $strategic_groups = [];
+        $strategic_total = 0.0;
+        $other_revenue = 0.0;
+
+        foreach ($rows as $row) {
+            $group_id = (int) ($row->global_sci_id ?? 0);
+            $revenue = (float) ($row->revenue ?? 0);
+            if ($revenue <= 0) {
+                continue;
+            }
+
+            if ($group_id > 0) {
+                $strategic_total += $revenue;
+                $label = trim((string) ($row->sci_code ?? ''));
+                $name = trim((string) ($row->sci_name ?? ''));
+                if ($name !== '') {
+                    $label = $label !== '' ? ($label . ' - ' . $name) : $name;
+                }
+
+                $strategic_groups[] = [
+                    'global_sci_id' => $group_id,
+                    'label' => $label !== '' ? $label : ('HCL #' . $group_id),
+                    'revenue' => $revenue,
+                ];
+            } else {
+                $other_revenue += $revenue;
+            }
+        }
+
+        if ((float) $shop_net_revenue > 0 && $strategic_total > 0) {
+            $other_revenue = max(0.0, (float) $shop_net_revenue - $strategic_total);
+        }
+
+        return [
+            'strategic_groups' => $strategic_groups,
+            'other_revenue' => $other_revenue,
+            'strategic_total' => $strategic_total,
+        ];
     }
 }

@@ -61,6 +61,9 @@ $net_share_base = $total_net > 0 ? $total_net : 1;
         <?php foreach ($sales as $blog_id => $s):
             $share = $net_share_base > 0 ? round(((float) ($s['net_revenue'] ?? 0) / $net_share_base) * 100, 1) : 0;
             $bar_width = $share > 0 ? max(8, min(100, $share)) : 0;
+            $hcl_breakdown = $s['hcl_breakdown'] ?? [];
+            $strategic_groups = $hcl_breakdown['strategic_groups'] ?? [];
+            $other_revenue = (float) ($hcl_breakdown['other_revenue'] ?? 0);
         ?>
         <div style="margin-top:12px; border:1px solid #e6edf4; border-radius:22px; padding:14px 15px; background:#fcfdff;">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -103,6 +106,26 @@ $net_share_base = $total_net > 0 ? $total_net : 1;
                     </td>
                 </tr>
             </table>
+
+            <div style="margin-top:12px; border-top:1px dashed #dbe6f1; padding-top:10px;">
+                <div style="font-size:10px; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">Chi tiết doanh số theo nhóm hàng chiến lược</div>
+                <?php if (!empty($strategic_groups)): ?>
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;">
+                        <?php foreach ($strategic_groups as $group): ?>
+                            <tr>
+                                <td style="padding:4px 0; font-size:12px; color:#13273e;"><?php echo esc_html($group['label'] ?? 'HCL'); ?></td>
+                                <td align="right" style="padding:4px 0; font-size:12px; font-weight:700; color:#1f8f4d;"><?php echo $fmt($group['revenue'] ?? 0); ?>đ</td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <tr>
+                            <td style="padding:6px 0 0 0; font-size:12px; color:#5f7288; border-top:1px solid #edf2f7;">Nhóm hàng khác</td>
+                            <td align="right" style="padding:6px 0 0 0; font-size:12px; font-weight:700; color:#2d5f8a; border-top:1px solid #edf2f7;"><?php echo $fmt($other_revenue); ?>đ</td>
+                        </tr>
+                    </table>
+                <?php else: ?>
+                    <div style="font-size:12px; color:#7a8d9f;">Không có phát sinh doanh số theo nhóm HCL trong kỳ này.</div>
+                <?php endif; ?>
+            </div>
         </div>
         <?php endforeach; ?>
     <?php endif; ?>
