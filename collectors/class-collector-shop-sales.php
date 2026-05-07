@@ -91,7 +91,7 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
                     'new_customer_count' => (int) $r->new_customer_count,
                     'avg_order_value'    => (int) $r->order_count > 0 ? round($net_revenue / (int) $r->order_count) : 0,
                     'avg_items_per_order' => round((float) $r->avg_items_per_order, 1),
-                    'hcl_breakdown'      => self::build_hcl_breakdown($r->blog_id, $date_from, $date_to, $net_revenue),
+                    'hcl_breakdown'      => self::build_hcl_breakdown($r->blog_id, $date_from, $date_to, $gross_revenue),
                 ];
                 $rollup_blog_ids[$r->blog_id] = true;
             }
@@ -153,7 +153,7 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
                 'new_customer_count' => 0,
                 'avg_order_value'    => $row->order_count > 0 ? round($net / $row->order_count) : 0,
                 'avg_items_per_order' => 0,
-                'hcl_breakdown'      => self::build_hcl_breakdown($blog->blog_id, $date_from, $date_to, $net),
+                'hcl_breakdown'      => self::build_hcl_breakdown($blog->blog_id, $date_from, $date_to, $gross_revenue),
             ];
         }
 
@@ -165,16 +165,103 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
         return $result;
     }
 
-    private static function build_hcl_breakdown($blog_id, $date_from, $date_to, $shop_net_revenue)
+    private static function build_hcl_breakdown($blog_id, $date_from, $date_to, $shop_sales_basis)
     {
         global $wpdb;
 
         $bid = (int) $blog_id;
         if ($bid <= 0) {
-            return ['strategic_groups' => [], 'other_revenue' => 0.0, 'strategic_total' => 0.0];
+            return ['tree_rows' => [], 'other_revenue' => 0.0, 'strategic_total' => 0.0];
         }
 
-        $prefix = self::get_blog_prefix($bid);
+        $inventory_table = $wpdb->base_prefix . 'tgs_fact_inventory_daily';
+        $dim_product_table = $wpdb->base_prefix . 'tgs_dim_product';
+        $sci_table = $wpdb->base_prefix . 'global_sci';
+
+        if (
+            $wpdb->get_var("SHOW TABLES LIKE '{$inventory_table}'") !== $inventory_table ||
+            $wpdb->get_var("SHOW TABLES LIKE '{$dim_product_table}'") !== $dim_product_table ||
+            $wpdb->get_var("SHOW TABLES LIKE '{$sci_table}'") !== $sci_table
+        ) {
+            return self::build_hcl_breakdown_from_ledger($bid, $date_from, $date_to, $shop_sales_basis);
+        }
+
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT
+                COALESCE(p.global_sci_id, 0) AS global_sci_id,
+                COALESCE(s.sci_code, '')     AS sci_code,
+                COALESCE(s.name, '')         AS sci_name,
+                COALESCE(s.path, '')         AS sci_path,
+                COALESCE(SUM(i.sale_value), 0) AS revenue
+             FROM {$inventory_table} i
+             LEFT JOIN {$dim_product_table} p
+                ON p.sku = i.sku
+             LEFT JOIN {$sci_table} s
+                ON s.id = p.global_sci_id
+             WHERE i.blog_id = %d
+               AND i.rollup_date BETWEEN %s AND %s
+               AND COALESCE(i.sale_value, 0) > 0
+             GROUP BY COALESCE(p.global_sci_id, 0), COALESCE(s.sci_code, ''), COALESCE(s.name, ''), COALESCE(s.path, '')
+             ORDER BY sci_path ASC, revenue DESC",
+            $bid,
+            $date_from,
+            $date_to
+        )) ?: [];
+
+        $direct_groups = [];
+        $strategic_total = 0.0;
+        $other_revenue = 0.0;
+
+        foreach ($rows as $row) {
+            $group_id = (int) ($row->global_sci_id ?? 0);
+            $revenue = (float) ($row->revenue ?? 0);
+            if ($revenue <= 0) {
+                continue;
+            }
+
+            if ($group_id > 0) {
+                $strategic_total += $revenue;
+                $direct_groups[$group_id] = [
+                    'global_sci_id' => $group_id,
+                    'sci_code' => trim((string) ($row->sci_code ?? '')),
+                    'sci_name' => trim((string) ($row->sci_name ?? '')),
+                    'path' => trim((string) ($row->sci_path ?? '')),
+                    'revenue' => $revenue,
+                ];
+            } else {
+                $other_revenue += $revenue;
+            }
+        }
+
+        $tree_rows = [];
+        if (!empty($direct_groups)) {
+            $all_hcl_rows = $wpdb->get_results(
+                "SELECT id, sci_code, name, path
+                 FROM {$sci_table}
+                 WHERE is_deleted = 0 AND status = 1 AND path IS NOT NULL AND path <> ''
+                 ORDER BY path ASC, id ASC",
+                ARRAY_A
+            ) ?: [];
+
+            $tree_rows = self::build_hcl_tree_rows($direct_groups, $all_hcl_rows);
+        }
+
+        if ((float) $shop_sales_basis > 0 && $strategic_total > 0) {
+            $other_revenue = max($other_revenue, max(0.0, (float) $shop_sales_basis - $strategic_total));
+        }
+
+        return [
+            'tree_rows' => $tree_rows,
+            'other_revenue' => $other_revenue,
+            'strategic_total' => $strategic_total,
+        ];
+    }
+
+    private static function build_hcl_breakdown_from_ledger($blog_id, $date_from, $date_to, $shop_sales_basis)
+    {
+        global $wpdb;
+
+        $prefix = self::get_blog_prefix($blog_id);
         $ledger_table = $prefix . 'local_ledger';
         $item_table = $prefix . 'local_ledger_item';
         $product_table = $prefix . 'local_product_name';
@@ -188,7 +275,7 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
             $wpdb->get_var("SHOW TABLES LIKE '{$mapping_table}'") !== $mapping_table ||
             $wpdb->get_var("SHOW TABLES LIKE '{$sci_table}'") !== $sci_table
         ) {
-            return ['strategic_groups' => [], 'other_revenue' => 0.0, 'strategic_total' => 0.0];
+            return ['tree_rows' => [], 'other_revenue' => 0.0, 'strategic_total' => 0.0];
         }
 
         $rows = $wpdb->get_results($wpdb->prepare(
@@ -196,6 +283,7 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
                 COALESCE(m.global_sci_id, 0) AS global_sci_id,
                 COALESCE(s.sci_code, '')     AS sci_code,
                 COALESCE(s.name, '')         AS sci_name,
+                COALESCE(s.path, '')         AS sci_path,
                 COALESCE(SUM(
                     (COALESCE(li.quantity, 0) * COALESCE(li.price, 0))
                     + COALESCE(li.local_ledger_item_tax_amount, 0)
@@ -215,13 +303,13 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
                AND (l.is_deleted = 0 OR l.is_deleted IS NULL)
                AND (li.is_deleted = 0 OR li.is_deleted IS NULL)
                AND DATE(l.created_at) BETWEEN %s AND %s
-             GROUP BY COALESCE(m.global_sci_id, 0), COALESCE(s.sci_code, ''), COALESCE(s.name, '')
-             ORDER BY revenue DESC",
+             GROUP BY COALESCE(m.global_sci_id, 0), COALESCE(s.sci_code, ''), COALESCE(s.name, ''), COALESCE(s.path, '')
+             ORDER BY sci_path ASC, revenue DESC",
             $date_from,
             $date_to
         )) ?: [];
 
-        $strategic_groups = [];
+        $direct_groups = [];
         $strategic_total = 0.0;
         $other_revenue = 0.0;
 
@@ -234,15 +322,11 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
 
             if ($group_id > 0) {
                 $strategic_total += $revenue;
-                $label = trim((string) ($row->sci_code ?? ''));
-                $name = trim((string) ($row->sci_name ?? ''));
-                if ($name !== '') {
-                    $label = $label !== '' ? ($label . ' - ' . $name) : $name;
-                }
-
-                $strategic_groups[] = [
+                $direct_groups[$group_id] = [
                     'global_sci_id' => $group_id,
-                    'label' => $label !== '' ? $label : ('HCL #' . $group_id),
+                    'sci_code' => trim((string) ($row->sci_code ?? '')),
+                    'sci_name' => trim((string) ($row->sci_name ?? '')),
+                    'path' => trim((string) ($row->sci_path ?? '')),
                     'revenue' => $revenue,
                 ];
             } else {
@@ -250,14 +334,140 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
             }
         }
 
-        if ((float) $shop_net_revenue > 0 && $strategic_total > 0) {
-            $other_revenue = max(0.0, (float) $shop_net_revenue - $strategic_total);
+        $tree_rows = [];
+        if (!empty($direct_groups)) {
+            $all_hcl_rows = $wpdb->get_results(
+                "SELECT id, sci_code, name, path
+                 FROM {$sci_table}
+                 WHERE is_deleted = 0 AND status = 1 AND path IS NOT NULL AND path <> ''
+                 ORDER BY path ASC, id ASC",
+                ARRAY_A
+            ) ?: [];
+            $tree_rows = self::build_hcl_tree_rows($direct_groups, $all_hcl_rows);
+        }
+
+        if ((float) $shop_sales_basis > 0 && $strategic_total > 0) {
+            $other_revenue = max($other_revenue, max(0.0, (float) $shop_sales_basis - $strategic_total));
         }
 
         return [
-            'strategic_groups' => $strategic_groups,
+            'tree_rows' => $tree_rows,
             'other_revenue' => $other_revenue,
             'strategic_total' => $strategic_total,
         ];
+    }
+
+    private static function build_hcl_tree_rows(array $direct_groups, array $all_hcl_rows): array
+    {
+        $nodes_by_path = [];
+        $path_by_id = [];
+
+        foreach ($all_hcl_rows as $row) {
+            $path = self::normalize_hcl_path((string) ($row['path'] ?? ''));
+            if ($path === '') {
+                continue;
+            }
+
+            $id = (int) ($row['id'] ?? 0);
+            if ($id <= 0) {
+                continue;
+            }
+
+            $nodes_by_path[$path] = [
+                'id' => $id,
+                'path' => $path,
+                'sci_code' => trim((string) ($row['sci_code'] ?? '')),
+                'name' => trim((string) ($row['name'] ?? '')),
+                'revenue' => 0.0,
+                'children' => [],
+            ];
+            $path_by_id[$id] = $path;
+        }
+
+        foreach ($direct_groups as $group_id => $group) {
+            $path = $path_by_id[(int) $group_id] ?? self::normalize_hcl_path((string) ($group['path'] ?? ''));
+            $revenue = (float) ($group['revenue'] ?? 0);
+            if ($path === '' || $revenue <= 0) {
+                continue;
+            }
+
+            $current_path = $path;
+            while ($current_path !== '') {
+                if (isset($nodes_by_path[$current_path])) {
+                    $nodes_by_path[$current_path]['revenue'] += $revenue;
+                }
+
+                $last_slash = strrpos($current_path, '/');
+                if ($last_slash === false) {
+                    break;
+                }
+                $current_path = substr($current_path, 0, $last_slash);
+            }
+        }
+
+        foreach ($nodes_by_path as $path => &$node) {
+            if ($node['revenue'] <= 0) {
+                continue;
+            }
+
+            $last_slash = strrpos($path, '/');
+            if ($last_slash === false) {
+                continue;
+            }
+
+            $parent_path = substr($path, 0, $last_slash);
+            if (isset($nodes_by_path[$parent_path]) && $nodes_by_path[$parent_path]['revenue'] > 0) {
+                $nodes_by_path[$parent_path]['children'][] = $path;
+            }
+        }
+        unset($node);
+
+        $root_paths = [];
+        foreach ($nodes_by_path as $path => $node) {
+            if ($node['revenue'] <= 0) {
+                continue;
+            }
+
+            $last_slash = strrpos($path, '/');
+            $parent_path = $last_slash === false ? '' : substr($path, 0, $last_slash);
+            if ($parent_path === '' || !isset($nodes_by_path[$parent_path]) || $nodes_by_path[$parent_path]['revenue'] <= 0) {
+                $root_paths[] = $path;
+            }
+        }
+
+        $tree_rows = [];
+        foreach ($root_paths as $root_path) {
+            self::append_hcl_tree_row($root_path, $nodes_by_path, $tree_rows, 0);
+        }
+
+        return $tree_rows;
+    }
+
+    private static function append_hcl_tree_row(string $path, array $nodes_by_path, array &$tree_rows, int $depth): void
+    {
+        if (!isset($nodes_by_path[$path])) {
+            return;
+        }
+
+        $node = $nodes_by_path[$path];
+        $label = $node['sci_code'] !== '' ? $node['sci_code'] : ($node['name'] !== '' ? $node['name'] : ('HCL #' . $node['id']));
+
+        $tree_rows[] = [
+            'global_sci_id' => (int) $node['id'],
+            'label' => $label,
+            'revenue' => (float) $node['revenue'],
+            'depth' => $depth,
+            'has_children' => !empty($node['children']),
+        ];
+
+        foreach ($node['children'] as $child_path) {
+            self::append_hcl_tree_row($child_path, $nodes_by_path, $tree_rows, $depth + 1);
+        }
+    }
+
+    private static function normalize_hcl_path(string $path): string
+    {
+        $path = str_replace('\\', '/', trim($path));
+        return trim($path, '/');
     }
 }

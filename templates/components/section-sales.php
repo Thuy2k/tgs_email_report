@@ -62,7 +62,7 @@ $net_share_base = $total_net > 0 ? $total_net : 1;
             $share = $net_share_base > 0 ? round(((float) ($s['net_revenue'] ?? 0) / $net_share_base) * 100, 1) : 0;
             $bar_width = $share > 0 ? max(8, min(100, $share)) : 0;
             $hcl_breakdown = $s['hcl_breakdown'] ?? [];
-            $strategic_groups = $hcl_breakdown['strategic_groups'] ?? [];
+            $tree_rows = $hcl_breakdown['tree_rows'] ?? [];
             $other_revenue = (float) ($hcl_breakdown['other_revenue'] ?? 0);
         ?>
         <div style="margin-top:12px; border:1px solid #e6edf4; border-radius:22px; padding:14px 15px; background:#fcfdff;">
@@ -109,11 +109,19 @@ $net_share_base = $total_net > 0 ? $total_net : 1;
 
             <div style="margin-top:12px; border-top:1px dashed #dbe6f1; padding-top:10px;">
                 <div style="font-size:10px; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">Chi tiết doanh số theo nhóm hàng chiến lược</div>
-                <?php if (!empty($strategic_groups)): ?>
+                <?php if (!empty($tree_rows)): ?>
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;">
-                        <?php foreach ($strategic_groups as $group): ?>
+                        <?php foreach ($tree_rows as $group): ?>
+                            <?php
+                            $depth = max(0, (int) ($group['depth'] ?? 0));
+                            $indent = $depth * 18;
+                            $label_style = 'display:block;padding-left:' . $indent . 'px;';
+                            if (!empty($group['has_children'])) {
+                                $label_style .= 'font-weight:700;';
+                            }
+                            ?>
                             <tr>
-                                <td style="padding:4px 0; font-size:12px; color:#13273e;"><?php echo esc_html($group['label'] ?? 'HCL'); ?></td>
+                                <td style="padding:4px 0; font-size:12px; color:#13273e;"><span style="<?php echo esc_attr($label_style); ?>"><?php echo esc_html($group['label'] ?? 'HCL'); ?></span></td>
                                 <td align="right" style="padding:4px 0; font-size:12px; font-weight:700; color:#1f8f4d;"><?php echo $fmt($group['revenue'] ?? 0); ?>đ</td>
                             </tr>
                         <?php endforeach; ?>
