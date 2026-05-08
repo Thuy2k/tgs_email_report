@@ -134,8 +134,9 @@ $net_share_base = $total_net > 0 ? $total_net : 1;
                     ?>
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:separate; table-layout:fixed;">
                         <tr>
-                            <?php $col_index = 0; foreach ($hcl_columns as $col): $col_index++; $is_last_col = ($col_index === $col_count); ?>
-                                <td width="<?php echo $col_width; ?>%" style="vertical-align:top; padding-right:<?php echo $is_last_col ? '0' : '8px'; ?>;">
+                            <?php $col_index = 0; foreach ($hcl_columns as $col): $col_index++; $is_last_col = ($col_index === $col_count); $is_first_col = ($col_index === 1); ?>
+                                <td width="<?php echo $col_width; ?>%" style="vertical-align:top; padding-right:<?php echo $is_last_col ? '0' : '8px'; ?>; padding-left:<?php echo $is_first_col ? '0' : '2px'; ?>;">
+                                    <div style="background:#f8fbff; border:1px solid #e4edf6; border-radius:10px; padding:8px 10px;">
                                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;">
                                         <?php
                                         $root = $col['root'];
@@ -150,7 +151,7 @@ $net_share_base = $total_net > 0 ? $total_net : 1;
                                             <td align="right" style="padding:4px 0; font-size:12px; font-weight:700; color:#1f8f4d; white-space:nowrap;"><?php echo $fmt($root['revenue'] ?? 0); ?>đ</td>
                                         </tr>
 
-                                        <?php foreach ($col['rows'] as $child): ?>
+                                        <?php $child_index = 0; foreach ($col['rows'] as $child): $child_index++; ?>
                                             <?php
                                             $child_depth = max(1, (int) ($child['depth'] ?? 1));
                                             $indent = ($child_depth - 1) * 14;
@@ -160,13 +161,15 @@ $net_share_base = $total_net > 0 ? $total_net : 1;
                                                 $child_label = (string) ($child['label'] ?? 'HCL');
                                             }
                                             $child_weight = !empty($child['has_children']) ? '700' : '500';
+                                            $child_border = $child_index === 1 ? 'border-top:1px solid #edf3f8;' : 'border-top:1px dashed #edf3f8;';
                                             ?>
                                             <tr>
-                                                <td style="padding:4px 0; font-size:12px; color:#13273e; padding-left:<?php echo (int) $indent; ?>px; font-weight:<?php echo $child_weight; ?>;"><?php echo esc_html($child_label); ?></td>
-                                                <td align="right" style="padding:4px 0; font-size:12px; font-weight:700; color:#1f8f4d; white-space:nowrap;"><?php echo $fmt($child['revenue'] ?? 0); ?>đ</td>
+                                                <td style="<?php echo esc_attr($child_border); ?> padding:5px 0; font-size:12px; color:#13273e; padding-left:<?php echo (int) $indent; ?>px; font-weight:<?php echo $child_weight; ?>;"><?php echo esc_html($child_label); ?></td>
+                                                <td align="right" style="<?php echo esc_attr($child_border); ?> padding:5px 0; font-size:12px; font-weight:700; color:#1f8f4d; white-space:nowrap;"><?php echo $fmt($child['revenue'] ?? 0); ?>đ</td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </table>
+                                    </div>
                                 </td>
                             <?php endforeach; ?>
                         </tr>
