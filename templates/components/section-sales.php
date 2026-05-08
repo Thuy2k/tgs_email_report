@@ -110,21 +110,69 @@ $net_share_base = $total_net > 0 ? $total_net : 1;
             <div style="margin-top:12px; border-top:1px dashed #dbe6f1; padding-top:10px;">
                 <div style="font-size:10px; color:#7a8d9f; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">Chi tiết doanh số theo nhóm hàng chiến lược</div>
                 <?php if (!empty($tree_rows)): ?>
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;">
-                        <?php foreach ($tree_rows as $group): ?>
-                            <?php
-                            $depth = max(0, (int) ($group['depth'] ?? 0));
-                            $indent = $depth * 18;
-                            $label_style = 'display:block;padding-left:' . $indent . 'px;';
-                            if (!empty($group['has_children'])) {
-                                $label_style .= 'font-weight:700;';
-                            }
-                            ?>
-                            <tr>
-                                <td style="padding:4px 0; font-size:12px; color:#13273e;"><span style="<?php echo esc_attr($label_style); ?>"><?php echo esc_html($group['label'] ?? 'HCL'); ?></span></td>
-                                <td align="right" style="padding:4px 0; font-size:12px; font-weight:700; color:#1f8f4d;"><?php echo $fmt($group['revenue'] ?? 0); ?>đ</td>
-                            </tr>
-                        <?php endforeach; ?>
+                    <?php
+                    $hcl_columns = [];
+                    $current_root_key = null;
+                    foreach ($tree_rows as $group) {
+                        $depth = max(0, (int) ($group['depth'] ?? 0));
+                        if ($depth === 0) {
+                            $current_root_key = (string) ($group['global_sci_id'] ?? ('root_' . count($hcl_columns)));
+                            $hcl_columns[$current_root_key] = [
+                                'root' => $group,
+                                'rows' => [],
+                            ];
+                            continue;
+                        }
+
+                        if ($current_root_key !== null && isset($hcl_columns[$current_root_key])) {
+                            $hcl_columns[$current_root_key]['rows'][] = $group;
+                        }
+                    }
+
+                    $col_count = max(1, count($hcl_columns));
+                    $col_width = floor(100 / $col_count);
+                    ?>
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:separate; table-layout:fixed;">
+                        <tr>
+                            <?php $col_index = 0; foreach ($hcl_columns as $col): $col_index++; $is_last_col = ($col_index === $col_count); ?>
+                                <td width="<?php echo $col_width; ?>%" style="vertical-align:top; padding-right:<?php echo $is_last_col ? '0' : '8px'; ?>;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;">
+                                        <?php
+                                        $root = $col['root'];
+                                        $root_path = trim((string) ($root['path'] ?? ''));
+                                        $root_label = $root_path !== '' ? str_replace('/', ' - ', $root_path) : '';
+                                        if ($root_label === '') {
+                                            $root_label = (string) ($root['label'] ?? 'HCL');
+                                        }
+                                        ?>
+                                        <tr>
+                                            <td style="padding:4px 0; font-size:12px; color:#13273e; font-weight:700;"><?php echo esc_html($root_label); ?></td>
+                                            <td align="right" style="padding:4px 0; font-size:12px; font-weight:700; color:#1f8f4d; white-space:nowrap;"><?php echo $fmt($root['revenue'] ?? 0); ?>đ</td>
+                                        </tr>
+
+                                        <?php foreach ($col['rows'] as $child): ?>
+                                            <?php
+                                            $child_depth = max(1, (int) ($child['depth'] ?? 1));
+                                            $indent = ($child_depth - 1) * 14;
+                                            $child_path = trim((string) ($child['path'] ?? ''));
+                                            $child_label = $child_path !== '' ? str_replace('/', ' - ', $child_path) : '';
+                                            if ($child_label === '') {
+                                                $child_label = (string) ($child['label'] ?? 'HCL');
+                                            }
+                                            $child_weight = !empty($child['has_children']) ? '700' : '500';
+                                            ?>
+                                            <tr>
+                                                <td style="padding:4px 0; font-size:12px; color:#13273e; padding-left:<?php echo (int) $indent; ?>px; font-weight:<?php echo $child_weight; ?>;"><?php echo esc_html($child_label); ?></td>
+                                                <td align="right" style="padding:4px 0; font-size:12px; font-weight:700; color:#1f8f4d; white-space:nowrap;"><?php echo $fmt($child['revenue'] ?? 0); ?>đ</td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </table>
+                                </td>
+                            <?php endforeach; ?>
+                        </tr>
+                    </table>
+
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:6px; border-collapse:collapse;">
                         <tr>
                             <td style="padding:6px 0 0 0; font-size:12px; color:#5f7288; border-top:1px solid #edf2f7;">Nhóm hàng khác</td>
                             <td align="right" style="padding:6px 0 0 0; font-size:12px; font-weight:700; color:#2d5f8a; border-top:1px solid #edf2f7;"><?php echo $fmt($other_revenue); ?>đ</td>

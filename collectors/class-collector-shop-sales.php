@@ -455,6 +455,9 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
         $tree_rows[] = [
             'global_sci_id' => (int) $node['id'],
             'label' => $label,
+            'sci_code' => (string) $node['sci_code'],
+            'sci_name' => (string) $node['name'],
+            'path' => (string) $node['path'],
             'revenue' => (float) $node['revenue'],
             'depth' => $depth,
             'has_children' => !empty($node['children']),
