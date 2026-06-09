@@ -136,6 +136,56 @@ abstract class TGS_Collector_Base
         return trim((string) $value);
     }
 
+    protected static function global_product_names(array $skus): array
+    {
+        $products = TGS_Email_Global_Products::products_by_skus($skus);
+        $names = [];
+
+        foreach ($products as $product) {
+            $product = (array) $product;
+            $sku = TGS_Email_Global_Products::sku($product);
+            if ($sku === '') {
+                continue;
+            }
+            $name = TGS_Email_Global_Products::name($product, $sku);
+            $names[$sku] = $name;
+            $names[strtoupper($sku)] = $name;
+        }
+
+        return $names;
+    }
+
+    protected static function fill_global_product_names(array $items, string $sku_key = 'sku', string $name_key = 'product_name'): array
+    {
+        $skus = [];
+        foreach ($items as $item) {
+            $sku = is_array($item) ? ($item[$sku_key] ?? '') : ($item->{$sku_key} ?? '');
+            $sku = trim((string) $sku);
+            if ($sku !== '') {
+                $skus[] = $sku;
+            }
+        }
+
+        $names = self::global_product_names($skus);
+        foreach ($items as &$item) {
+            $is_array = is_array($item);
+            $sku = trim((string) ($is_array ? ($item[$sku_key] ?? '') : ($item->{$sku_key} ?? '')));
+            $name = $names[$sku] ?? ($names[strtoupper($sku)] ?? '');
+            if ($name === '') {
+                continue;
+            }
+
+            if ($is_array) {
+                $item[$name_key] = $name;
+            } else {
+                $item->{$name_key} = $name;
+            }
+        }
+        unset($item);
+
+        return $items;
+    }
+
     /* ── Helper: switch blog & lấy prefix ── */
     protected static function get_blog_prefix($blog_id)
     {

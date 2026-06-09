@@ -35,20 +35,17 @@ class TGS_Collector_Shop_Gifts extends TGS_Collector_Base
             $prefix = self::get_blog_prefix($bid);
             $ledger = $prefix . 'local_ledger';
             $items  = $prefix . 'local_ledger_item';
-            $pnames = $prefix . 'local_product_name';
 
             if ($wpdb->get_var("SHOW TABLES LIKE '{$items}'") !== $items) {
                 continue;
             }
 
-            // Tổng hợp theo toàn shop
+            // Tổng hợp theo ledger item; catalog/giá lấy từ global product.
             $agg = $wpdb->get_row($wpdb->prepare(
                 "SELECT
                     COUNT(DISTINCT li.local_ledger_id)                            AS order_count,
-                    COALESCE(SUM(li.quantity), 0)                                 AS gift_qty,
-                    COALESCE(SUM(pn.local_product_price_after_tax * li.quantity), 0) AS gift_value
+                    COALESCE(SUM(li.quantity), 0)                                 AS gift_qty
                  FROM {$items} li
-                 LEFT JOIN {$pnames} pn ON pn.local_product_name_id = li.local_product_name_id
                  WHERE li.local_ledger_item_gift_type = 1
                    AND li.is_deleted = 0
                    AND DATE(li.created_at) BETWEEN %s AND %s",
@@ -59,34 +56,52 @@ class TGS_Collector_Shop_Gifts extends TGS_Collector_Base
                 continue;
             }
 
-            // Top 5 sản phẩm tặng kèm nhiều nhất (theo số lượng)
-            $top = $wpdb->get_results($wpdb->prepare(
+            $gift_rows = $wpdb->get_results($wpdb->prepare(
                 "SELECT
-                    li.local_product_name_id,
-                    pn.local_product_name  AS name,
-                    pn.local_product_sku   AS sku,
+                    TRIM(li.local_product_sku) AS sku,
                     COUNT(DISTINCT li.local_ledger_id)                            AS order_count,
-                    SUM(li.quantity)                                               AS qty,
-                    SUM(pn.local_product_price_after_tax * li.quantity)            AS value
+                    SUM(li.quantity)                                               AS qty
                  FROM {$items} li
-                 LEFT JOIN {$pnames} pn ON pn.local_product_name_id = li.local_product_name_id
                  WHERE li.local_ledger_item_gift_type = 1
                    AND li.is_deleted = 0
                    AND DATE(li.created_at) BETWEEN %s AND %s
-                 GROUP BY li.local_product_name_id
-                 ORDER BY qty DESC
-                 LIMIT 5",
+                   AND li.local_product_sku IS NOT NULL
+                   AND TRIM(li.local_product_sku) <> ''
+                 GROUP BY TRIM(li.local_product_sku)
+                 ORDER BY qty DESC",
                 $date_from, $date_to
             ));
 
+            $skus = [];
+            foreach ($gift_rows as $r) {
+                $sku = trim((string) ($r->sku ?? ''));
+                if ($sku !== '') {
+                    $skus[] = $sku;
+                }
+            }
+
+            $products_by_sku = TGS_Email_Global_Products::products_by_skus($skus);
+
             $top_items = [];
-            foreach ($top as $r) {
+            $gift_value_total = 0.0;
+            foreach ($gift_rows as $index => $r) {
+                $sku = trim((string) ($r->sku ?? ''));
+                $product = $sku !== '' ? ($products_by_sku[$sku] ?? ($products_by_sku[strtoupper($sku)] ?? null)) : null;
+                $product = $product ? (array) $product : [];
+                $qty = (float) $r->qty;
+                $value = TGS_Email_Global_Products::price_after_tax($product) * $qty;
+                $gift_value_total += $value;
+
+                if ($index >= 5) {
+                    continue;
+                }
+
                 $top_items[] = [
-                    'name'        => $r->name ?: $r->sku,
-                    'sku'         => $r->sku,
+                    'name'        => TGS_Email_Global_Products::name($product, $sku),
+                    'sku'         => $sku,
                     'order_count' => (int) $r->order_count,
-                    'qty'         => (float) $r->qty,
-                    'value'       => (float) $r->value,
+                    'qty'         => $qty,
+                    'value'       => $value,
                 ];
             }
 
@@ -97,13 +112,13 @@ class TGS_Collector_Shop_Gifts extends TGS_Collector_Base
                 'shop_code'   => $info['code'],
                 'order_count' => (int) $agg->order_count,
                 'gift_qty'    => (float) $agg->gift_qty,
-                'gift_value'  => (float) $agg->gift_value,
+                'gift_value'  => $gift_value_total,
                 'items'       => $top_items,
             ];
 
             $summary['total_orders'] += (int) $agg->order_count;
             $summary['total_qty']    += (float) $agg->gift_qty;
-            $summary['total_value']  += (float) $agg->gift_value;
+            $summary['total_value']  += $gift_value_total;
             $summary['shop_count']++;
         }
 

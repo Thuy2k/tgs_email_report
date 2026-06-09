@@ -269,6 +269,17 @@ class TGS_Collector_Warehouse_MinMax extends TGS_Collector_Base
             $result['summary']['total_reorder'] = count($reorders);
         }
 
+        $result['below_min'] = self::fill_global_product_names($result['below_min']);
+        $result['above_max'] = self::fill_global_product_names($result['above_max']);
+        $result['stockout'] = self::fill_global_product_names($result['stockout']);
+        $result['near_expiry'] = self::fill_global_product_names($result['near_expiry']);
+        foreach ($result['by_shop'] as &$shop_data) {
+            $shop_data['below_min'] = self::fill_global_product_names($shop_data['below_min']);
+            $shop_data['above_max'] = self::fill_global_product_names($shop_data['above_max']);
+            $shop_data['stockout'] = self::fill_global_product_names($shop_data['stockout']);
+        }
+        unset($shop_data);
+
         return $result;
     }
 }

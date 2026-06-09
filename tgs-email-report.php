@@ -25,6 +25,7 @@ define('TGS_EMAIL_REPORT_PLUGIN_FILE', __FILE__);
 require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'includes/class-tgs-email-constants.php';
 require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'includes/class-tgs-email-settings.php';
 require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'includes/class-tgs-email-sender.php';
+require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'includes/class-tgs-email-global-products.php';
 
 // Collectors
 require_once TGS_EMAIL_REPORT_PLUGIN_DIR . 'collectors/class-collector-base.php';

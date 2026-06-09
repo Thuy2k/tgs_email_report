@@ -264,14 +264,12 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
         $prefix = self::get_blog_prefix($blog_id);
         $ledger_table = $prefix . 'local_ledger';
         $item_table = $prefix . 'local_ledger_item';
-        $product_table = $prefix . 'local_product_name';
         $mapping_table = $wpdb->base_prefix . 'global_product_sci_mapping';
         $sci_table = $wpdb->base_prefix . 'global_sci';
 
         if (
             $wpdb->get_var("SHOW TABLES LIKE '{$ledger_table}'") !== $ledger_table ||
             $wpdb->get_var("SHOW TABLES LIKE '{$item_table}'") !== $item_table ||
-            $wpdb->get_var("SHOW TABLES LIKE '{$product_table}'") !== $product_table ||
             $wpdb->get_var("SHOW TABLES LIKE '{$mapping_table}'") !== $mapping_table ||
             $wpdb->get_var("SHOW TABLES LIKE '{$sci_table}'") !== $sci_table
         ) {
@@ -292,16 +290,16 @@ class TGS_Collector_Shop_Sales extends TGS_Collector_Base
              FROM {$item_table} li
              INNER JOIN {$ledger_table} l
                 ON l.local_ledger_id = li.local_ledger_id
-             LEFT JOIN {$product_table} pn
-                ON pn.local_product_name_id = li.local_product_name_id
              LEFT JOIN {$mapping_table} m
-                ON m.sku = TRIM(pn.local_product_sku)
+                ON m.sku = TRIM(li.local_product_sku)
              LEFT JOIN {$sci_table} s
                 ON s.id = m.global_sci_id
              WHERE l.local_ledger_type = 10
                AND l.local_ledger_status IN (2, 4)
                AND (l.is_deleted = 0 OR l.is_deleted IS NULL)
                AND (li.is_deleted = 0 OR li.is_deleted IS NULL)
+               AND li.local_product_sku IS NOT NULL
+               AND TRIM(li.local_product_sku) <> ''
                AND DATE(l.created_at) BETWEEN %s AND %s
              GROUP BY COALESCE(m.global_sci_id, 0), COALESCE(s.sci_code, ''), COALESCE(s.name, ''), COALESCE(s.path, '')
              ORDER BY sci_path ASC, revenue DESC",
